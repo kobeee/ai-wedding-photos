@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap');
+
+:root {
+  --bg-primary: #0A0A0A;
+  --bg-surface: #141414;
+  --bg-elevated: #1E1E1E;
+  --accent-gold: #C9A96E;
+  --accent-gold-hover: #D4B87D;
+  --accent-gold-dim: rgba(201, 169, 110, 0.15);
+  --text-primary: #F5F0EB;
+  --text-secondary: #B8B0A8;
+  --text-muted: #6B6560;
+  --border-subtle: #2A2520;
+  --border-gold: rgba(201, 169, 110, 0.3);
+  --success: #4CAF50;
+  --error: #E57373;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+a { color: inherit; text-decoration: none; }
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+}
+
+img { max-width: 100%; display: block; }
+
+#root { min-height: 100vh; }

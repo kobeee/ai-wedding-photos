@@ -1,0 +1,44 @@
+import { Check, X, Aperture } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import './StepHeader.css'
+
+const steps = ['建立档案', 'AI试妆', '选择套餐']
+
+interface Props {
+  current: number // 1-based
+  onClose?: () => void
+}
+
+export default function StepHeader({ current, onClose }: Props) {
+  return (
+    <header className="step-header">
+      <Link to="/" className="step-header__logo">
+        <Aperture size={22} color="var(--accent-gold)" />
+        <span>LUMIÈRE STUDIO</span>
+      </Link>
+      <div className="step-header__steps">
+        {steps.map((label, i) => {
+          const stepNum = i + 1
+          const done = stepNum < current
+          const active = stepNum === current
+          return (
+            <div key={i} className="step-header__step-group">
+              {i > 0 && (
+                <div className={`step-header__line ${done || active ? 'step-header__line--active' : ''}`} />
+              )}
+              <div className="step-header__step">
+                <div className={`step-header__num ${done || active ? 'step-header__num--active' : ''}`}>
+                  {done ? <Check size={12} /> : stepNum}
+                </div>
+                <span className={done || active ? 'step-header__label--active' : ''}>{label}</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <button className="step-header__close" onClick={onClose} aria-label="关闭">
+        <X size={24} color="var(--text-muted)" />
+      </button>
+    </header>
+  )
+}

@@ -1,0 +1,148 @@
+.pkg-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.pkg-main {
+  flex: 1;
+  padding: 48px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+}
+
+.pkg-title {
+  text-align: center;
+}
+
+.pkg-title h1 {
+  font-size: 32px;
+  font-weight: 200;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.pkg-title p {
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.pkg-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.pkg-tab {
+  padding: 8px 20px;
+  border-radius: 100px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pkg-tab--active {
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+  border-color: var(--accent-gold);
+  font-weight: 500;
+}
+
+.pkg-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  width: 100%;
+}
+
+.pkg-card {
+  background: var(--bg-surface);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.pkg-card--selected {
+  border-color: var(--accent-gold);
+}
+
+.pkg-card:hover {
+  transform: translateY(-4px);
+}
+
+.pkg-card__img {
+  height: 260px;
+  background: #1A1A1A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pkg-card__info {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pkg-card__info h3 {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.pkg-card__info > span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.pkg-card__badge {
+  display: inline-block;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.pkg-card__badge--hot {
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+}
+
+.pkg-card__badge--svip {
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.pkg-bottom {
+  display: flex;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.btn--gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn--gold:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn--outline-light {
+  padding: 16px 48px;
+  border-radius: 100px;
+  border: 1px solid var(--text-muted);
+  color: var(--text-primary);
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+}

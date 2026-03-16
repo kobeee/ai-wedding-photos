@@ -1,0 +1,127 @@
+.makeup-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.makeup-main {
+  flex: 1;
+  padding: 48px 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 48px;
+}
+
+.makeup-title {
+  text-align: center;
+}
+
+.makeup-title h1 {
+  font-size: 32px;
+  font-weight: 200;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.makeup-title p {
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.makeup-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.makeup-section__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.makeup-section__header span {
+  font-size: 18px;
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+.makeup-cards {
+  display: flex;
+  gap: 24px;
+}
+
+.makeup-card {
+  flex: 1;
+  background: var(--bg-surface);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.makeup-card--selected {
+  border-color: var(--accent-gold);
+}
+
+.makeup-card__img {
+  height: 240px;
+  background: #1A1A1A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.makeup-card__info {
+  padding: 20px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.makeup-card__info h3 {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.makeup-card__info p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.makeup-card__badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+  padding: 6px 16px;
+  border-radius: 100px;
+}
+
+.makeup-bottom {
+  display: flex;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.btn--outline-light {
+  padding: 16px 48px;
+  border-radius: 100px;
+  border: 1px solid var(--text-muted);
+  color: var(--text-primary);
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.btn--outline-light:hover {
+  border-color: var(--text-primary);
+}

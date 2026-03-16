@@ -1,0 +1,160 @@
+.review-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 60px;
+}
+
+.review-header__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.review-header__logo span {
+  font-size: 16px;
+  font-weight: 300;
+  letter-spacing: 3px;
+  color: var(--text-primary);
+}
+
+.review-header__title {
+  font-size: 16px;
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+.review-main {
+  flex: 1;
+  display: flex;
+  padding: 0 60px 40px;
+  gap: 0;
+  min-height: 0;
+}
+
+.review-preview {
+  flex: 1;
+  background: #1A1A1A;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.review-preview span {
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+.review-panel {
+  width: 360px;
+  padding-left: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.review-panel__top {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.review-info h2 {
+  font-size: 18px;
+  font-weight: 300;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.review-info span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.review-thumbs__label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 12px;
+}
+
+.review-thumbs__row {
+  display: flex;
+  gap: 8px;
+}
+
+.review-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: #2A2A2A;
+}
+
+.review-thumb--active {
+  border: 1px solid var(--accent-gold);
+}
+
+.review-magic__label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 12px;
+}
+
+.review-magic__btns {
+  display: flex;
+  gap: 8px;
+}
+
+.review-magic__btns button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.review-magic__btns button:hover {
+  border-color: var(--accent-gold);
+}
+
+.review-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn--full {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 0;
+  border-radius: 100px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn--outline-light {
+  border: 1px solid var(--text-muted);
+  color: var(--text-primary);
+  background: transparent;
+}
