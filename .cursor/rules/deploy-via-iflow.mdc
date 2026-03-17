@@ -1,0 +1,31 @@
+---
+description: 部署任务委托给 deploy 子 agent（iflow），节省主 agent token
+alwaysApply: true
+---
+
+# 部署委托规则
+
+## 职责边界
+
+- **主 agent（你）**：负责项目代码、业务逻辑、依赖、构建配置等所有项目问题
+- **deploy 子 agent**：仅负责 VPS 部署，委托 iflow 执行，不消耗主 agent token
+
+## 委托时机
+
+当用户请求涉及 **VPS 部署** 时，**不要** 自行执行部署命令，而是委托给 deploy 子 agent：
+
+- 在 Claude Code 中：`/deploy 执行标准部署` 或说「用 deploy agent 部署」
+- deploy 子 agent 定义于 `.claude/agents/deploy.md`，在 `/agents` 中可见
+
+## 部署受阻时的处理
+
+若 deploy 子 agent 返回的输出包含 `[部署受阻]`：
+
+1. **立即接手**：由主 agent 分析并修复代码、依赖、配置等问题
+2. **不要** 再次委托 deploy agent 尝试修复代码
+3. 修复完成后，可再次委托 deploy agent 执行部署
+
+## 总结
+
+- 部署 = 委托 deploy 子 agent（内部调用 iflow）
+- 代码问题 = 主 agent 处理

@@ -12,10 +12,10 @@ const processSteps = [
 ]
 
 const packages = [
-  { name: '极简高定棚拍', tag: '棚拍 · 极简 · 高级感' },
-  { name: '冰岛黑沙滩史诗', tag: '旅拍 · 史诗 · 大片感' },
-  { name: '中式赛博朋克', tag: '中式 · 赛博 · 未来感' },
-  { name: '法式街角胶片', tag: '胶片 · 法式 · 浪漫' },
+  { name: '极简高定棚拍', tag: '纯净光影 · 高级质感 · 20张精修', img: '/images/package-minimal.png' },
+  { name: '冰岛黑沙滩史诗', tag: '极地风光 · 史诗叙事 · 20张精修', img: '/images/package-iceland.png' },
+  { name: '中式赛博朋克', tag: '霓虹国潮 · 未来东方 · 20张精修', img: '/images/package-cyberpunk.png' },
+  { name: '法式街角胶片', tag: '复古胶片 · 浪漫街拍 · 20张精修', img: '/images/package-french.png' },
 ]
 
 const plans = [
@@ -83,7 +83,7 @@ export default function Landing() {
         <div className="gallery__grid">
           {packages.map((p) => (
             <div key={p.name} className="gallery__card">
-              <div className="gallery__img" />
+              <div className="gallery__img" style={{ backgroundImage: `url(${p.img})` }} />
               <div className="gallery__info">
                 <h3>{p.name}</h3>
                 <span>{p.tag}</span>

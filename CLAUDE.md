@@ -25,6 +25,14 @@
 - 配置：`src/backend/config.py`（pydantic-settings，读 .env）
 - 设计稿：`page.pen`（6 页面完整设计）
 
+## 部署子 agent（/agents 可见）
+
+- **位置**：`.claude/agents/deploy.md`，在 Claude Code 中运行 `/agents` 可见
+- **职责**：仅执行 VPS 部署，不解决项目/代码问题
+- **执行方式**：委托给 iflow（glm-5 + YOLO），部署工作在 iflow 进程中完成，**不消耗主 agent token**
+- **调用**：`/deploy 执行标准部署` 或对主 agent 说「用 deploy agent 部署」
+- **通信**：若 iflow 输出 `[部署受阻]`，主 agent 需接手处理代码问题
+
 ## VPS 部署信息
 - 代码路径：`/opt/apps/wedding-photos/`（扁平结构，非嵌套）
 - 容器：frontend(3080:80) + backend(expose 8000)
