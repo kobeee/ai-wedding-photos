@@ -15,6 +15,24 @@ services:
       dockerfile: docker/Dockerfile.backend
     expose:
       - "8000"
+    volumes:
+      - backend-data:/app/data
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
+
+  acp:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    command: python -m acp
+    expose:
+      - "8001"
+    volumes:
+      - backend-data:/app/data
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+
+volumes:
+  backend-data:

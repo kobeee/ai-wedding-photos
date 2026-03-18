@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, Image } from 'lucide-react'
+import { Camera } from 'lucide-react'
 import StepHeader from '../components/StepHeader'
 import './PackageSelect.css'
 
 const tabs = ['全部', '棚拍', '旅拍', '奇幻', '中式', '胶片']
 
 const packages = [
-  { name: '极简高定棚拍', tag: '棚拍 · 极简 · 高级感', cat: '棚拍' },
-  { name: '冰岛黑沙滩史诗', tag: '旅拍 · 史诗 · 大片感', cat: '旅拍', hot: true },
-  { name: '中式赛博朋克', tag: '中式 · 赛博 · 未来感', cat: '中式' },
-  { name: '法式街角胶片', tag: '胶片 · 法式 · 浪漫', cat: '胶片' },
-  { name: '极光星空梦境', tag: '奇幻 · 星空 · 梦幻', cat: '奇幻', svip: true },
-  { name: '王家卫港风', tag: '胶片 · 港风 · 情绪感', cat: '胶片' },
+  { name: '极简高定棚拍', tag: '棚拍 · 极简 · 高级感', cat: '棚拍', img: '/images/generated-1773760300940.png' },
+  { name: '冰岛黑沙滩史诗', tag: '旅拍 · 史诗 · 大片感', cat: '旅拍', hot: true, img: '/images/generated-1773760329336.png' },
+  { name: '中式赛博朋克', tag: '中式 · 赛博 · 未来感', cat: '中式', img: '/images/generated-1773760370680.png' },
+  { name: '法式街角胶片', tag: '胶片 · 法式 · 浪漫', cat: '胶片', img: '/images/generated-1773760405653.png' },
+  { name: '极光星空梦境', tag: '奇幻 · 星空 · 梦幻', cat: '奇幻', svip: true, img: '/images/generated-1773760433656.png' },
+  { name: '王家卫港风', tag: '胶片 · 港风 · 情绪感', cat: '胶片', img: '/images/generated-1773760464935.png' },
 ]
 
 export default function PackageSelect() {
@@ -48,9 +48,7 @@ export default function PackageSelect() {
               className={`pkg-card ${selected === p.name ? 'pkg-card--selected' : ''}`}
               onClick={() => setSelected(p.name)}
             >
-              <div className="pkg-card__img">
-                <Image size={40} color="var(--text-muted)" />
-              </div>
+              <div className="pkg-card__img" style={{ backgroundImage: `url(${p.img})` }} />
               <div className="pkg-card__info">
                 <h3>{p.name}</h3>
                 <span>{p.tag}</span>
@@ -65,7 +63,6 @@ export default function PackageSelect() {
           <button className="btn btn--outline-light" onClick={() => navigate('/makeup')}>上一步</button>
           <button
             className="btn btn--gold"
-            disabled={!selected}
             onClick={() => navigate('/waiting')}
           >
             <Camera size={18} />

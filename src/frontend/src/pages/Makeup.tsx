@@ -1,19 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { User, Image } from 'lucide-react'
+import { User } from 'lucide-react'
 import StepHeader from '../components/StepHeader'
 import './Makeup.css'
 
 const styles = [
-  { id: 'natural', name: '素颜质感', desc: '保留自然状态\n真实清透' },
-  { id: 'refined', name: '精致妆容', desc: '轻度修饰提亮\n干净利落' },
-  { id: 'sculpt', name: '骨相微调', desc: '面部轮廓优化\n杂志封面感' },
+  { id: 'natural', name: '素颜质感', desc: '保留自然状态\n真实清透', img: '/images/generated-1773759812646.png' },
+  { id: 'refined', name: '精致新郎妆', desc: '轻度修饰提亮\n干净利落', img: '/images/generated-1773759932888.png' },
+  { id: 'sculpt', name: '骨相微调', desc: '面部轮廓优化\n杂志封面感', img: '/images/generated-1773759970779.png' },
 ]
 
 const brideStyles = [
-  { id: 'natural', name: '素颜质感', desc: '清透自然\n原生美感' },
-  { id: 'refined', name: '精致新娘妆', desc: '柔光美肌\n优雅端庄' },
-  { id: 'sculpt', name: '骨相微调', desc: '面部轮廓精修\n高级感拉满' },
+  { id: 'natural', name: '素颜质感', desc: '清透自然\n原生美感', img: '/images/generated-1773760053899.png' },
+  { id: 'refined', name: '精致新娘妆', desc: '柔光美肌\n优雅端庄', img: '/images/generated-1773760091146.png' },
+  { id: 'sculpt', name: '骨相微调', desc: '面部轮廓精修\n高级感拉满', img: '/images/generated-1773760190993.png' },
 ]
 
 export default function Makeup() {
@@ -42,9 +42,7 @@ export default function Makeup() {
                 className={`makeup-card ${groomStyle === s.id ? 'makeup-card--selected' : ''}`}
                 onClick={() => setGroomStyle(s.id)}
               >
-                <div className="makeup-card__img">
-                  <Image size={40} color="var(--text-muted)" />
-                </div>
+                <div className="makeup-card__img" style={{ backgroundImage: `url(${s.img})` }} />
                 <div className="makeup-card__info">
                   <h3>{s.name}</h3>
                   <p>{s.desc}</p>
@@ -67,9 +65,7 @@ export default function Makeup() {
                 className={`makeup-card ${brideStyle === s.id ? 'makeup-card--selected' : ''}`}
                 onClick={() => setBrideStyle(s.id)}
               >
-                <div className="makeup-card__img">
-                  <Image size={40} color="var(--text-muted)" />
-                </div>
+                <div className="makeup-card__img" style={{ backgroundImage: `url(${s.img})` }} />
                 <div className="makeup-card__info">
                   <h3>{s.name}</h3>
                   <p>{s.desc}</p>

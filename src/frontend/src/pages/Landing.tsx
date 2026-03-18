@@ -1,21 +1,32 @@
 import { Link } from 'react-router-dom'
-import { Check, ChevronDown } from 'lucide-react'
+import { Sparkles, Check, ChevronDown } from 'lucide-react'
 import Header from '../components/Header'
 import './Landing.css'
 
 const processSteps = [
-  { num: '01', title: '建立档案', desc: '上传5-10张日常照' },
-  { num: '02', title: 'AI试妆', desc: '选择理想妆造状态' },
-  { num: '03', title: '选择套餐', desc: '刷卡片式浏览风格' },
-  { num: '04', title: '沉浸等待', desc: '30-60秒AI创作' },
-  { num: '05', title: '审片交付', desc: '大图呈现与下载' },
+  { num: '01', title: '上传日常照', desc: '男女双方各上传5张清晰日常照片，系统自动提取面部特征' },
+  { num: '02', title: 'AI试妆间', desc: '三种妆造风格供你选择，找到最理想的自己' },
+  { num: '03', title: '选择视觉套餐', desc: '像刷小红书一样浏览精美套餐，点击即选，无需输入任何文字' },
+  { num: '04', title: 'AI拍摄中', desc: '沉浸式等待约30-60秒，AI正在为你布光、调色、抓拍' },
+  { num: '05', title: '审片与交付', desc: '大图震撼呈现，支持换装重拍，一键下载8K无损大图' },
 ]
 
-const packages = [
-  { name: '极简高定棚拍', tag: '纯净光影 · 高级质感 · 20张精修', img: '/images/package-minimal.png' },
-  { name: '冰岛黑沙滩史诗', tag: '极地风光 · 史诗叙事 · 20张精修', img: '/images/package-iceland.png' },
-  { name: '中式赛博朋克', tag: '霓虹国潮 · 未来东方 · 20张精修', img: '/images/package-cyberpunk.png' },
-  { name: '法式街角胶片', tag: '复古胶片 · 浪漫街拍 · 20张精修', img: '/images/package-french.png' },
+const featuredPackages = [
+  { name: '极简高定棚拍', tag: '纯净光影 · 高级质感 · 20张精修', img: '/images/generated-1773678492426.png' },
+  { name: '冰岛黑沙滩史诗', tag: '极地风光 · 史诗叙事 · 20张精修', img: '/images/generated-1773678527070.png' },
+]
+
+const allPackages = [
+  [
+    { name: '极简高定棚拍', tag: '纯净光影 · 高级质感 · 20张精修', img: '/images/generated-1773678545362.png' },
+    { name: '冰岛黑沙滩史诗', tag: '极地风光 · 史诗叙事 · 20张精修', img: '/images/generated-1773678585370.png' },
+    { name: '日系温泉旅拍', tag: '温泉和风 · 清新治愈 · 20张精修', img: '/images/generated-1773761406546.png' },
+  ],
+  [
+    { name: '中式赛博朋克', tag: '霓虹国潮 · 未来东方 · 20张精修', img: '/images/generated-1773678610353.png' },
+    { name: '法式街角胶片', tag: '复古胶片 · 浪漫街拍 · 20张精修', img: '/images/generated-1773678632534.png' },
+    { name: '星空露营婚纱', tag: '星河璀璨 · 浪漫野奢 · 20张精修', img: '/images/generated-1773761362241.png' },
+  ],
 ]
 
 const plans = [
@@ -54,8 +65,15 @@ export default function Landing() {
       <section className="hero">
         <div className="hero__overlay" />
         <div className="hero__content">
+          <div className="hero__badge">
+            <Sparkles size={14} />
+            <span>AI驱动 · 影楼级品质</span>
+          </div>
           <h1>把最完美的数字记忆<br />留给最重要的人</h1>
-          <p>AI驱动的专业级婚纱摄影 · 0提示词门槛 · 影楼级4K/8K画质</p>
+          <p className="hero__sub">
+            零门槛 AI 婚纱摄影，一杯咖啡的时间，获取影楼级4K/8K画质大片。<br />
+            无需摆拍，无需修图，AI为你定制专属视觉记忆。
+          </p>
           <div className="hero__buttons">
             <Link to="/upload" className="btn btn--gold">免费体验一张</Link>
             <a href="#gallery" className="btn btn--outline">查看作品集</a>
@@ -64,8 +82,9 @@ export default function Landing() {
       </section>
 
       <section className="process" id="process">
+        <span className="section-label">像点外卖一样简单</span>
         <h2 className="section-title">五步，从日常照到婚纱大片</h2>
-        <p className="section-sub">无需任何专业知识，像点外卖一样简单</p>
+        <p className="section-sub">全流程隐藏技术参数，你只需要做选择</p>
         <div className="process__steps">
           {processSteps.map((s) => (
             <div key={s.num} className="process__card">
@@ -77,14 +96,15 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="gallery" id="gallery">
-        <h2 className="section-title">视觉套餐</h2>
-        <p className="section-sub">像刷小红书一样，找到属于你们的风格</p>
-        <div className="gallery__grid">
-          {packages.map((p) => (
-            <div key={p.name} className="gallery__card">
-              <div className="gallery__img" style={{ backgroundImage: `url(${p.img})` }} />
-              <div className="gallery__info">
+      <section className="featured" id="gallery">
+        <span className="section-label">精选推荐</span>
+        <h2 className="section-title">最受欢迎的两组视觉方案</h2>
+        <p className="section-sub">超过 80% 的用户选择了这两套方案</p>
+        <div className="featured__grid">
+          {featuredPackages.map((p) => (
+            <div key={p.name} className="featured__card">
+              <div className="featured__img" style={{ backgroundImage: `url(${p.img})` }} />
+              <div className="featured__info">
                 <h3>{p.name}</h3>
                 <span>{p.tag}</span>
               </div>
@@ -93,18 +113,37 @@ export default function Landing() {
         </div>
       </section>
 
+      <section className="gallery">
+        <span className="section-label">全部套餐</span>
+        <h2 className="section-title">找到属于你们的视觉故事</h2>
+        <p className="section-sub">8 种风格，从极简棚拍到冰岛史诗，总有一款属于你们</p>
+        {allPackages.map((row, ri) => (
+          <div key={ri} className="gallery__row">
+            {row.map((p) => (
+              <div key={p.name} className="gallery__card">
+                <div className="gallery__img" style={{ backgroundImage: `url(${p.img})` }} />
+                <div className="gallery__info">
+                  <h3>{p.name}</h3>
+                  <span>{p.tag}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </section>
+
       <section className="pricing" id="pricing">
+        <span className="section-label">选择你的方案</span>
         <h2 className="section-title">从免费体验到无限畅拍</h2>
-        <p className="section-sub">选择适合您的方案</p>
         <div className="pricing__cards">
           {plans.map((p) => (
-            <div key={p.name} className={`pricing__card ${p.highlight ? 'pricing__card--highlight' : ''}`}>
+            <div key={p.name} className={`pricing__card${p.highlight ? ' pricing__card--highlight' : ''}${p.badge ? ' pricing__card--svip' : ''}`}>
               <div className="pricing__top">
-                <span className="pricing__name">{p.name}</span>
+                <span className={`pricing__name${p.highlight || p.badge ? ' pricing__name--gold' : ''}`}>{p.name}</span>
                 {p.badge && <span className="pricing__badge">{p.badge}</span>}
               </div>
               <div className="pricing__price">
-                <span className="pricing__amount">{p.price}</span>
+                <span className={`pricing__amount${p.highlight || p.badge ? ' pricing__amount--gold' : ''}`}>{p.price}</span>
                 {p.period && <span className="pricing__period">{p.period}</span>}
               </div>
               <p className="pricing__desc">{p.desc}</p>
@@ -122,7 +161,7 @@ export default function Landing() {
       </section>
 
       <section className="faq" id="faq">
-        <h2 className="section-title">常见问题</h2>
+        <h2 className="section-title faq__title">常见问题</h2>
         <p className="section-sub">关于AI婚纱摄影，你可能想知道的</p>
         <div className="faq__list">
           {faqs.map((f, i) => (
@@ -144,7 +183,7 @@ export default function Landing() {
           <Link to="/upload" className="btn btn--gold btn--lg">免费体验一张</Link>
           <a href="#faq" className="btn btn--outline btn--lg">了解更多</a>
         </div>
-        <span className="final-cta__trust">无需注册 · 免费体验 · 24小时数据自动销毁</span>
+        <span className="final-cta__trust">无需注册  ·  免费体验  ·  24小时数据自动销毁</span>
       </section>
 
       <footer className="footer">

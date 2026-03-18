@@ -20,22 +20,33 @@ const steps = [
 
 export default function Waiting() {
   const navigate = useNavigate()
-  const [progress, setProgress] = useState(0)
+  const [progress, setProgress] = useState(62)
   const [msgIdx, setMsgIdx] = useState(0)
-  const [currentStep, setCurrentStep] = useState(0)
+  const [currentStep, setCurrentStep] = useState(2)
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress(p => {
-        if (p >= 100) {
-          clearInterval(timer)
-          setTimeout(() => navigate('/review'), 500)
-          return 100
-        }
-        return p + 2
-      })
-    }, 120)
-    return () => clearInterval(timer)
+    let timer: ReturnType<typeof setInterval> | undefined
+    const starter = setTimeout(() => {
+      timer = setInterval(() => {
+        setProgress(p => {
+          if (p >= 100) {
+            if (timer) {
+              clearInterval(timer)
+            }
+            setTimeout(() => navigate('/review'), 500)
+            return 100
+          }
+          return p + 2
+        })
+      }, 120)
+    }, 1800)
+
+    return () => {
+      clearTimeout(starter)
+      if (timer) {
+        clearInterval(timer)
+      }
+    }
   }, [navigate])
 
   useEffect(() => {

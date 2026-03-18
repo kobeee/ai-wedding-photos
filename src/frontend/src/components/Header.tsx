@@ -21,10 +21,10 @@ export default function Header({ variant = 'landing' }: { variant?: 'landing' | 
         <span>LUMIÈRE STUDIO</span>
       </Link>
       <nav className="header__nav">
-        <a href="#process">流程</a>
-        <a href="#gallery">作品</a>
-        <a href="#pricing">价格</a>
-        <a href="#faq">FAQ</a>
+        <a href="#process">关于我们</a>
+        <a href="#gallery">作品集</a>
+        <a href="#pricing">套餐</a>
+        <a href="#faq">常见问题</a>
       </nav>
       <Link to="/upload" className="header__cta">开始创作</Link>
     </header>

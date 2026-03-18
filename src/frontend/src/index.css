@@ -2,16 +2,22 @@
 
 :root {
   --bg-primary: #0A0A0A;
-  --bg-surface: #141414;
-  --bg-elevated: #1E1E1E;
+  --bg-secondary: #141210;
+  --bg-surface: #1A1816;
+  --bg-elevated: #252220;
+  --bg-card: #1E1C1A;
   --accent-gold: #C9A96E;
   --accent-gold-hover: #D4B87D;
-  --accent-gold-dim: rgba(201, 169, 110, 0.15);
+  --accent-gold-dim: #8A7548;
+  --accent-gold-light: #E8D5B0;
+  --accent-rose: #C47070;
   --text-primary: #F5F0EB;
-  --text-secondary: #B8B0A8;
+  --text-secondary: #9A9490;
   --text-muted: #6B6560;
-  --border-subtle: #2A2520;
+  --border-subtle: #2A2725;
+  --border-accent: rgba(201, 169, 110, 0.2);
   --border-gold: rgba(201, 169, 110, 0.3);
+  --overlay-dark: rgba(10, 10, 10, 0.6);
   --success: #4CAF50;
   --error: #E57373;
 }
@@ -39,6 +45,27 @@ button {
   cursor: pointer;
   font-family: inherit;
   color: inherit;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 48px;
+  border-radius: 100px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.btn--gold {
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+}
+
+.btn--gold:hover {
+  background: var(--accent-gold-hover);
 }
 
 img { max-width: 100%; display: block; }

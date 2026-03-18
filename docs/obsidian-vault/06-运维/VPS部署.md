@@ -1,12 +1,15 @@
 ---
 tags: [运维, VPS, 部署]
 created: 2026-03-17
-related: [[部署方案]], [[Docker配置]], [[Nginx配置]]
+related: [[部署方案]], [[Docker配置]], [[Nginx配置]], [[部署Runbook]], [[VPS排障清单]]
 ---
 
 # VPS 部署
 
 > 服务器部署步骤与环境配置。
+
+> [!warning]
+> 本文前半部分保留了 2026-03-17 首次上线时的历史记录。当前有效发布入口、目录结构与排障步骤请优先参考 [[部署Runbook]]。
 
 ---
 
@@ -38,6 +41,13 @@ VPS 上代码位于 `/opt/apps/wedding-photos/`，目录结构为扁平布局：
 ```
 
 > 注意：VPS 上是扁平结构，与本地 `src/frontend/`、`docker/Dockerfile.*` 的嵌套结构不同。Dockerfile 中的 COPY 路径已相应调整。
+
+> [!warning]
+> 上述目录结构仅代表 2026-03-17 首次上线时的阶段性状态。当前线上已回归到与本地一致的嵌套结构：
+>
+> - `/opt/apps/wedding-photos/src/frontend`
+> - `/opt/apps/wedding-photos/src/backend`
+> - `/opt/apps/wedding-photos/docker/docker-compose.yml`
 
 ### 部署步骤
 
@@ -95,17 +105,13 @@ https://wedding.escapemobius.cc/api/health → {"status":"ok"} ✅
 
 ## 更新部署
 
+> 当前标准流程见 [[部署Runbook]]，本节仅保留历史命令示意。
+
 ```bash
-cd /opt/ai-wedding
-
-# 拉取最新代码
-git pull
-
-# 重建并重启
-docker-compose -f docker/docker-compose.yml up -d --build
-
-# 检查日志
-docker-compose -f docker/docker-compose.yml logs -f --tail=50
+cd /opt/apps/wedding-photos/docker
+docker compose -f docker-compose.yml build
+docker compose -f docker-compose.yml up -d --force-recreate
+docker compose -f docker-compose.yml ps
 ```
 
 ---
@@ -113,14 +119,9 @@ docker-compose -f docker/docker-compose.yml logs -f --tail=50
 ## 回滚
 
 ```bash
-# 查看历史提交
-git log --oneline -5
-
-# 回滚到指定版本
-git checkout <commit_hash>
-
-# 重建
-docker-compose -f docker/docker-compose.yml up -d --build
+cd /opt/apps/wedding-photos/docker
+docker compose -f docker-compose.yml down
+# 之后按目标版本重新同步代码并执行标准发布
 ```
 
 ---
@@ -129,7 +130,8 @@ docker-compose -f docker/docker-compose.yml up -d --build
 
 ```bash
 # 容器状态
-docker-compose -f docker/docker-compose.yml ps
+cd /opt/apps/wedding-photos/docker
+docker compose -f docker-compose.yml ps
 
 # 资源使用
 docker stats
@@ -141,7 +143,7 @@ df -h
 tail -f /var/log/nginx/access.log
 
 # 应用日志
-docker-compose -f docker/docker-compose.yml logs -f backend
+docker compose -f docker-compose.yml logs -f backend
 ```
 
 ---

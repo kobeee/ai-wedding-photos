@@ -20,13 +20,14 @@
 .pkg-title h1 {
   font-size: 32px;
   font-weight: 200;
-  letter-spacing: 2px;
+  letter-spacing: 4px;
   margin-bottom: 12px;
 }
 
 .pkg-title p {
   font-size: 15px;
   color: var(--text-muted);
+  letter-spacing: 0.5px;
 }
 
 .pkg-tabs {
@@ -78,10 +79,8 @@
 
 .pkg-card__img {
   height: 260px;
-  background: #1A1A1A;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: #1A1A1A center/cover no-repeat;
+  border-radius: 16px 16px 0 0;
 }
 
 .pkg-card__info {
@@ -126,18 +125,18 @@
   padding: 20px 0;
 }
 
-.btn--gold {
+.pkg-page .btn--gold {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.btn--gold:disabled {
+.pkg-page .btn--gold:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.btn--outline-light {
+.pkg-page .btn--outline-light {
   padding: 16px 48px;
   border-radius: 100px;
   border: 1px solid var(--text-muted);

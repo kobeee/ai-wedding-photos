@@ -6,11 +6,11 @@
 
 .makeup-main {
   flex: 1;
-  padding: 48px 120px;
+  padding: 48px 140px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 48px;
+  gap: 56px;
 }
 
 .makeup-title {
@@ -18,15 +18,16 @@
 }
 
 .makeup-title h1 {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 200;
-  letter-spacing: 2px;
+  letter-spacing: 4px;
   margin-bottom: 12px;
 }
 
 .makeup-title p {
   font-size: 15px;
   color: var(--text-muted);
+  letter-spacing: 0.5px;
 }
 
 .makeup-section {
@@ -45,7 +46,7 @@
 .makeup-section__header span {
   font-size: 18px;
   font-weight: 300;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
 }
 
 .makeup-cards {
@@ -65,14 +66,13 @@
 
 .makeup-card--selected {
   border-color: var(--accent-gold);
+  border-width: 1.5px;
 }
 
 .makeup-card__img {
   height: 240px;
-  background: #1A1A1A;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: #1A1A1A center/cover no-repeat;
+  border-radius: 16px 16px 0 0;
 }
 
 .makeup-card__info {
@@ -111,7 +111,7 @@
   padding: 20px 0;
 }
 
-.btn--outline-light {
+.makeup-page .btn--outline-light {
   padding: 16px 48px;
   border-radius: 100px;
   border: 1px solid var(--text-muted);
@@ -122,6 +122,6 @@
   transition: border-color 0.2s;
 }
 
-.btn--outline-light:hover {
+.makeup-page .btn--outline-light:hover {
   border-color: var(--text-primary);
 }

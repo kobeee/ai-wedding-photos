@@ -21,13 +21,20 @@ export default function StepHeader({ current, onClose }: Props) {
           const stepNum = i + 1
           const done = stepNum < current
           const active = stepNum === current
+          const upcoming = stepNum > current
           return (
             <div key={i} className="step-header__step-group">
               {i > 0 && (
-                <div className={`step-header__line ${done || active ? 'step-header__line--active' : ''}`} />
+                <div className={`step-header__line ${stepNum <= current ? 'step-header__line--active' : ''}`} />
               )}
               <div className="step-header__step">
-                <div className={`step-header__num ${done || active ? 'step-header__num--active' : ''}`}>
+                <div
+                  className={[
+                    'step-header__num',
+                    done || active ? 'step-header__num--active' : '',
+                    upcoming ? 'step-header__num--upcoming' : '',
+                  ].join(' ').trim()}
+                >
                   {done ? <Check size={12} /> : stepNum}
                 </div>
                 <span className={done || active ? 'step-header__label--active' : ''}>{label}</span>

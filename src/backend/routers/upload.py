@@ -7,6 +7,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
 from config import settings
 from models.schemas import FileInfo, UploadResponse
+from models.database import create_user, increment_photos_count
 from utils.storage import save_upload_file
 
 logger = logging.getLogger(__name__)
@@ -53,6 +54,9 @@ async def upload_files(
     if not user_id:
         user_id = uuid.uuid4().hex[:8]
 
+    # 创建用户并获取 session token
+    user_id, session_token = await create_user(user_id)
+
     result_files: list[FileInfo] = []
 
     for file in files:
@@ -84,4 +88,10 @@ async def upload_files(
 
     logger.info("User %s uploaded %d file(s)", user_id, len(result_files))
 
-    return UploadResponse(user_id=user_id, files=result_files)
+    await increment_photos_count(user_id, len(result_files))
+
+    return {
+        "user_id": user_id,
+        "session_token": session_token,
+        "files": [f.model_dump() for f in result_files],
+    }

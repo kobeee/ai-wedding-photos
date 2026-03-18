@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 60px;
+  padding: 24px 80px;
   width: 100%;
 }
 
@@ -21,12 +21,14 @@
 
 .header__nav {
   display: flex;
-  gap: 32px;
+  gap: 40px;
 }
 
 .header__nav a {
   font-size: 14px;
-  color: var(--text-muted);
+  font-weight: 300;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
   transition: color 0.2s;
 }
 
@@ -35,11 +37,12 @@
 }
 
 .header__cta {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
+  letter-spacing: 2px;
   color: var(--bg-primary);
   background: var(--accent-gold);
-  padding: 10px 24px;
+  padding: 12px 32px;
   border-radius: 100px;
   transition: background 0.2s;
 }

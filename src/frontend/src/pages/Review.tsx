@@ -1,7 +1,18 @@
 import { useNavigate } from 'react-router-dom'
-import { Aperture, Image, Download, RefreshCw, Printer, Shirt, Eraser, Paintbrush, X } from 'lucide-react'
+import { Aperture, Download, RefreshCw, Printer, Shirt, Eraser, Paintbrush, Sparkles, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import './Review.css'
+
+const previewImage = '/images/generated-1773760511090.png'
+
+const thumbs = [
+  '/images/generated-1773760691135.png',
+  '/images/generated-1773760720771.png',
+  '/images/generated-1773761017022.png',
+  '/images/generated-1773760890251.png',
+  '/images/generated-1773760935669.png',
+  '/images/generated-1773760974366.png',
+]
 
 export default function Review() {
   const navigate = useNavigate()
@@ -20,9 +31,11 @@ export default function Review() {
       </header>
 
       <main className="review-main">
-        <div className="review-preview">
-          <Image size={80} color="var(--text-muted)" />
-          <span>AI生成的婚纱大片</span>
+        <div className="review-preview" style={{ backgroundImage: `url(${previewImage})` }}>
+          <div className="review-preview__label">
+            <Sparkles size={12} color="var(--text-muted)" />
+            <span>该内容由 AI 生成</span>
+          </div>
         </div>
 
         <aside className="review-panel">
@@ -35,8 +48,12 @@ export default function Review() {
             <div className="review-thumbs">
               <span className="review-thumbs__label">本组共 6 张</span>
               <div className="review-thumbs__row">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className={`review-thumb ${i === 2 ? 'review-thumb--active' : ''}`} />
+                {thumbs.map((img, i) => (
+                  <div
+                    key={img}
+                    className={`review-thumb ${i === 2 ? 'review-thumb--active' : ''}`}
+                    style={{ backgroundImage: `url(${img})` }}
+                  />
                 ))}
               </div>
             </div>

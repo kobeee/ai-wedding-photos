@@ -9,6 +9,8 @@ from fastapi.staticfiles import StaticFiles
 
 from config import settings
 from routers import health, upload, makeup, generate
+from models.database import get_db, close_db
+from middleware.auth import SessionAuthMiddleware
 from utils.storage import ensure_dirs, periodic_cleanup
 
 logging.basicConfig(
@@ -31,10 +33,13 @@ async def lifespan(app: FastAPI):
     logger.info("Upload dir: %s", Path(settings.upload_dir).resolve())
     logger.info("Output dir: %s", Path(settings.output_dir).resolve())
 
+    # 初始化数据库
+    await get_db()
+    logger.info("Database initialized: %s", settings.db_path)
+
     if not settings.laozhang_api_key:
         logger.warning(
-            "LAOZHANG_API_KEY is not set. AI features will be unavailable. "
-            "Create a .env file or set the environment variable."
+            "LAOZHANG_API_KEY is not set. AI features will be unavailable."
         )
 
     # 启动后台清理任务
@@ -50,13 +55,14 @@ async def lifespan(app: FastAPI):
         except asyncio.CancelledError:
             pass
 
+    await close_db()
     logger.info("%s shut down.", settings.app_name)
 
 
 app = FastAPI(
     title=settings.app_name,
     description="AI 高定婚纱摄影后端服务",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
@@ -69,14 +75,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---- Session Auth ----
+app.add_middleware(SessionAuthMiddleware)
+
 # ---- Routers ----
 app.include_router(health.router)
 app.include_router(upload.router)
 app.include_router(makeup.router)
 app.include_router(generate.router)
 
-# ---- Static file serving (uploads & outputs) ----
-# 让前端能通过 /api/files/uploads/... 和 /api/files/outputs/... 访问文件
+# ---- Static file serving ----
 uploads_path = Path(settings.upload_dir)
 outputs_path = Path(settings.output_dir)
 uploads_path.mkdir(parents=True, exist_ok=True)

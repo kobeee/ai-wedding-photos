@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import base64
+import json
 import logging
 from dataclasses import dataclass, field
 
 import httpx
 
 from config import settings
+from models.schemas import IssueCategory, QualityIssue
 
 logger = logging.getLogger(__name__)
 
@@ -16,32 +18,55 @@ class QualityReport:
     """图片质检结果。"""
     passed: bool = True
     score: float = 1.0  # 0.0 ~ 1.0
-    issues: list[str] = field(default_factory=list)
+    issues: list[QualityIssue] = field(default_factory=list)
     suggestions: list[str] = field(default_factory=list)
+
+    @property
+    def physical_issues(self) -> list[QualityIssue]:
+        return [i for i in self.issues if i.category == IssueCategory.physical]
+
+    @property
+    def emotional_issues(self) -> list[QualityIssue]:
+        return [i for i in self.issues if i.category == IssueCategory.emotional]
+
+    @property
+    def issue_descriptions(self) -> list[str]:
+        """向后兼容：返回纯文本 issue 列表。"""
+        return [i.description for i in self.issues]
 
 
 # 质检用的系统 prompt
 _CHECKER_SYSTEM_PROMPT = """你是一个专业的婚纱照质检AI。请仔细检查这张AI生成的婚纱照，判断是否存在以下问题：
 
+物理类问题 (physical)：
 1. 手指畸形（多指、少指、扭曲）
-2. 面部异常（五官变形、不对称、表情僵硬）
-3. 穿模问题（衣物穿过身体、首饰嵌入皮肤）
-4. 比例失调（头身比异常、四肢长度不对）
-5. 背景穿帮（不合理的物体、文字、水印）
-6. 光影错误（光源方向不一致、阴影缺失或错位）
-7. 边缘瑕疵（模糊过渡、锯齿、不自然的融合）
+2. 穿模问题（衣物穿过身体、首饰嵌入皮肤）
+3. 比例失调（头身比异常、四肢长度不对）
+4. 背景穿帮（不合理的物体、文字、水印）
+5. 光影错误（光源方向不一致、阴影缺失或错位）
+6. 边缘瑕疵（模糊过渡、锯齿、不自然的融合）
+
+情绪类问题 (emotional)：
+1. 面部表情僵硬或不自然
+2. 眼神空洞、无交流感
+3. 姿态不协调、缺乏情感张力
+4. 整体氛围与场景不匹配
 
 请用JSON格式返回结果：
 {
   "passed": true/false,
   "score": 0.0-1.0,
-  "issues": ["问题1描述", "问题2描述"],
+  "issues": [
+    {"description": "问题描述", "category": "physical或emotional", "severity": 0.0-1.0}
+  ],
   "suggestions": ["修复建议1", "修复建议2"]
 }
 
-如果图片质量优秀无明显问题，score >= 0.8 且 passed = true。
-如果存在轻微问题但可接受，score 0.5-0.8，passed = true，但列出issues。
-如果存在严重问题，score < 0.5，passed = false。
+评分标准：
+- 0.95+ 优秀，直接交付
+- 0.85-0.94 合格
+- 0.70-0.84 需修复
+- <0.70 需重新生成
 """
 
 
@@ -121,21 +146,21 @@ class VLMCheckerService:
             return QualityReport(
                 passed=True,
                 score=0.0,
-                issues=["Quality check service unavailable"],
+                issues=[QualityIssue(
+                    description="Quality check service unavailable",
+                    category=IssueCategory.physical,
+                    severity=0.0,
+                )],
                 suggestions=["Manual review recommended"],
             )
 
     def _parse_report(self, raw_content: str) -> QualityReport:
         """解析模型返回的 JSON 格式质检报告。"""
-        import json
-
-        # 尝试从返回内容中提取 JSON
         content = raw_content.strip()
 
         # 去掉可能的 markdown 代码块包裹
         if content.startswith("```"):
             lines = content.split("\n")
-            # 去掉首尾的 ``` 行
             json_lines = []
             inside = False
             for line in lines:
@@ -150,10 +175,34 @@ class VLMCheckerService:
 
         try:
             result = json.loads(content)
+
+            # 解析带分类的 issues
+            raw_issues = result.get("issues", [])
+            issues: list[QualityIssue] = []
+            for item in raw_issues:
+                if isinstance(item, dict):
+                    cat_str = item.get("category", "physical")
+                    try:
+                        cat = IssueCategory(cat_str)
+                    except ValueError:
+                        cat = IssueCategory.physical
+                    issues.append(QualityIssue(
+                        description=item.get("description", str(item)),
+                        category=cat,
+                        severity=float(item.get("severity", 0.5)),
+                    ))
+                elif isinstance(item, str):
+                    # 向后兼容纯字符串 issues
+                    issues.append(QualityIssue(
+                        description=item,
+                        category=self._guess_category(item),
+                        severity=0.5,
+                    ))
+
             return QualityReport(
                 passed=result.get("passed", True),
                 score=float(result.get("score", 1.0)),
-                issues=result.get("issues", []),
+                issues=issues,
                 suggestions=result.get("suggestions", []),
             )
         except (json.JSONDecodeError, ValueError):
@@ -161,9 +210,26 @@ class VLMCheckerService:
             return QualityReport(
                 passed=True,
                 score=0.5,
-                issues=["Quality report parsing failed"],
+                issues=[QualityIssue(
+                    description="Quality report parsing failed",
+                    category=IssueCategory.physical,
+                    severity=0.3,
+                )],
                 suggestions=["Manual review recommended"],
             )
+
+    @staticmethod
+    def _guess_category(description: str) -> IssueCategory:
+        """根据描述文本猜测问题分类。"""
+        emotional_keywords = [
+            "expression", "emotion", "eye", "gaze", "smile", "mood",
+            "表情", "情绪", "眼神", "笑", "氛围", "僵硬",
+        ]
+        desc_lower = description.lower()
+        for kw in emotional_keywords:
+            if kw in desc_lower:
+                return IssueCategory.emotional
+        return IssueCategory.physical
 
     async def check_and_suggest_fix_prompt(
         self,
@@ -177,11 +243,11 @@ class VLMCheckerService:
         """
         report = await self.check_image(image_data, mime_type)
 
-        if report.passed:
+        if report.passed and report.score >= settings.quality_acceptable:
             return report, None
 
-        # 生成修复 prompt
-        issues_text = "; ".join(report.issues)
+        # 生成修复 prompt（合并所有 issue 描述）
+        issues_text = "; ".join(i.description for i in report.issues)
         fix_prompt = (
             f"Based on the original prompt: '{original_prompt}', "
             f"fix the following issues: {issues_text}. "
