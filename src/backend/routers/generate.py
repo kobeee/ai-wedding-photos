@@ -78,11 +78,6 @@ PACKAGES: dict[str, PackageInfo] = {
     ),
 }
 
-# 生成配置
-PHOTOS_PER_PACKAGE = 4
-MAX_FIX_ROUNDS = 3
-
-
 def _collect_reference_images(user_id: str) -> list[tuple[bytes, str]]:
     """收集用户上传的所有照片作为参考图（同步读取）。"""
     upload_dir = user_upload_dir(user_id)
@@ -206,12 +201,15 @@ async def _generation_pipeline(task_id: str, req: GenerateRequest) -> None:
             "Artistic angle, walking together into the distance.",
         ]
 
-        for i in range(PHOTOS_PER_PACKAGE):
+        photos_per_package = max(settings.photos_per_package, 1)
+        max_fix_rounds = max(settings.max_fix_rounds, 1)
+
+        for i in range(photos_per_package):
             step_base = 15 + i * 20
 
             variant_prompt = f"{base_prompt} {variant_hints[i % len(variant_hints)]}"
             task.progress = step_base
-            task.message = f"正在生成第 {i + 1}/{PHOTOS_PER_PACKAGE} 张..."
+            task.message = f"正在生成第 {i + 1}/{photos_per_package} 张..."
 
             # Step 3: 生成底图
             img_bytes: bytes | None = None
@@ -245,7 +243,7 @@ async def _generation_pipeline(task_id: str, req: GenerateRequest) -> None:
 
             # Step 4: VLM 质检 + 双路径修复循环
             photo_score = 0.0
-            for fix_round in range(MAX_FIX_ROUNDS):
+            for fix_round in range(max_fix_rounds):
                 report, fix_prompt = await vlm_checker_service.check_and_suggest_fix_prompt(
                     image_data=img_bytes,
                     original_prompt=variant_prompt,
@@ -267,7 +265,7 @@ async def _generation_pipeline(task_id: str, req: GenerateRequest) -> None:
                     break
                 elif report.score >= settings.quality_fixable:
                     # 需修复
-                    if fix_round < MAX_FIX_ROUNDS - 1:
+                    if fix_round < max_fix_rounds - 1:
                         task.message = f"修复第 {i + 1} 张（第 {fix_round + 1} 轮）..."
                         task.status = TaskStatusEnum.processing
                         img_bytes = await _dual_path_fix(
@@ -276,7 +274,7 @@ async def _generation_pipeline(task_id: str, req: GenerateRequest) -> None:
                     # 最后一轮修复后直接用
                 else:
                     # < 0.70 重新生成
-                    if fix_round < MAX_FIX_ROUNDS - 1:
+                    if fix_round < max_fix_rounds - 1:
                         task.message = f"重新生成第 {i + 1} 张..."
                         task.status = TaskStatusEnum.processing
                         try:
@@ -343,10 +341,10 @@ async def create_generation_task(
     background_tasks: BackgroundTasks,
 ):
     """创建婚纱照生成任务。"""
-    if not settings.laozhang_api_key:
+    if not settings.nano_banana_api_key:
         raise HTTPException(
             status_code=503,
-            detail="AI service not configured. Set LAOZHANG_API_KEY.",
+            detail="Nano Banana service not configured. Set LAOZHANG_NANO_API_KEY or LAOZHANG_API_KEY.",
         )
 
     if req.package_id not in PACKAGES:

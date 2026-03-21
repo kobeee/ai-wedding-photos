@@ -37,9 +37,13 @@ async def lifespan(app: FastAPI):
     await get_db()
     logger.info("Database initialized: %s", settings.db_path)
 
-    if not settings.laozhang_api_key:
+    if not settings.chat_api_key:
         logger.warning(
-            "LAOZHANG_API_KEY is not set. AI features will be unavailable."
+            "LAOZHANG_API_KEY is not set. Director/VLM/GPT Image features will be unavailable."
+        )
+    if not settings.nano_banana_api_key:
+        logger.warning(
+            "LAOZHANG_NANO_API_KEY is not set. Nano Banana image generation will be unavailable."
         )
 
     # 启动后台清理任务

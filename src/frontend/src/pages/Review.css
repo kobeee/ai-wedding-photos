@@ -22,6 +22,7 @@
 .review-header__logo span {
   font-size: 16px;
   font-weight: 300;
+  line-height: 1;
   letter-spacing: 3px;
   color: var(--text-primary);
 }
@@ -29,7 +30,16 @@
 .review-header__title {
   font-size: 16px;
   font-weight: 300;
+  line-height: 1;
   letter-spacing: 2px;
+}
+
+.review-header > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
 }
 
 .review-main {
@@ -160,6 +170,7 @@
   padding: 14px 0;
   border-radius: 100px;
   font-size: 14px;
+  line-height: 1;
   cursor: pointer;
 }
 
@@ -167,4 +178,83 @@
   border: 1px solid var(--text-muted);
   color: var(--text-primary);
   background: transparent;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .review-header { padding: 20px 32px; }
+  .review-main { padding: 0 32px 32px; }
+  .review-panel { width: 300px; padding-left: 24px; }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .review-page { height: auto; min-height: 100vh; }
+  .review-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "logo close"
+      "title title";
+    row-gap: 10px;
+    padding: 16px 16px 0;
+  }
+  .review-header__logo {
+    grid-area: logo;
+    min-width: 0;
+  }
+  .review-header__logo span {
+    font-size: 13px;
+    letter-spacing: 2px;
+  }
+  .review-header__title {
+    grid-area: title;
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+  .review-header > button {
+    grid-area: close;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: end;
+  }
+  .review-main {
+    flex-direction: column;
+    padding: 0 16px 24px;
+    gap: 20px;
+  }
+  .review-preview {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    min-height: auto;
+    border-radius: 16px;
+  }
+  .review-panel {
+    width: 100%;
+    padding-left: 0;
+    gap: 24px;
+  }
+  .review-info h2 {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .review-info span { line-height: 1.6; }
+  .review-panel__top { gap: 20px; }
+  .review-thumbs__row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .review-thumb { width: 48px; height: 48px; }
+  .review-magic__btns {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .review-magic__btns button {
+    min-height: 40px;
+    padding-inline: 12px;
+  }
+  .review-actions { gap: 8px; }
 }

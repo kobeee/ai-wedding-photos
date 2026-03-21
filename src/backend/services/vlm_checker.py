@@ -12,6 +12,11 @@ from models.schemas import IssueCategory, QualityIssue
 
 logger = logging.getLogger(__name__)
 
+_UNAVAILABLE_CHANNEL_MARKERS = (
+    "无可用渠道",
+    "no available channel",
+)
+
 
 @dataclass
 class QualityReport:
@@ -79,18 +84,20 @@ class VLMCheckerService:
 
     def __init__(self) -> None:
         self.api_url = f"{settings.laozhang_base_url}/v1/chat/completions"
-        self.headers = {
-            "Authorization": f"Bearer {settings.laozhang_api_key}",
+        self.model = settings.vlm_model
+        self._channel_available = True
+
+    def _headers(self) -> dict[str, str]:
+        return {
+            "Authorization": f"Bearer {settings.chat_api_key}",
             "Content-Type": "application/json",
         }
-        # 用于质检的模型，用 gpt-4o 级别就够
-        self.model = "gpt-4o"
 
     def _check_api_key(self) -> None:
-        if not settings.laozhang_api_key:
+        if not settings.chat_api_key:
             raise RuntimeError(
-                "laozhang_api_key is not configured. "
-                "Set LAOZHANG_API_KEY in .env or environment variables."
+                "chat api key is not configured. "
+                "Set LAOZHANG_API_KEY."
             )
 
     async def check_image(
@@ -103,6 +110,9 @@ class VLMCheckerService:
         返回 QualityReport。
         """
         self._check_api_key()
+
+        if not self._channel_available:
+            return self._fallback_report("Quality check model channel unavailable")
 
         b64_image = base64.b64encode(image_data).decode()
         data_uri = f"data:{mime_type};base64,{b64_image}"
@@ -132,7 +142,7 @@ class VLMCheckerService:
         try:
             async with httpx.AsyncClient(timeout=60) as client:
                 resp = await client.post(
-                    self.api_url, headers=self.headers, json=payload
+                    self.api_url, headers=self._headers(), json=payload
                 )
                 resp.raise_for_status()
                 data = resp.json()
@@ -140,19 +150,13 @@ class VLMCheckerService:
             content = data["choices"][0]["message"]["content"]
             return self._parse_report(content)
 
+        except httpx.HTTPStatusError as exc:
+            self._maybe_disable_channel(exc.response)
+            logger.exception("VLM quality check failed")
+            return self._fallback_report("Quality check service unavailable")
         except Exception:
             logger.exception("VLM quality check failed")
-            # 质检服务异常时默认通过，避免阻塞流程
-            return QualityReport(
-                passed=True,
-                score=0.0,
-                issues=[QualityIssue(
-                    description="Quality check service unavailable",
-                    category=IssueCategory.physical,
-                    severity=0.0,
-                )],
-                suggestions=["Manual review recommended"],
-            )
+            return self._fallback_report("Quality check service unavailable")
 
     def _parse_report(self, raw_content: str) -> QualityReport:
         """解析模型返回的 JSON 格式质检报告。"""
@@ -230,6 +234,35 @@ class VLMCheckerService:
             if kw in desc_lower:
                 return IssueCategory.emotional
         return IssueCategory.physical
+
+    def _maybe_disable_channel(self, response: httpx.Response) -> None:
+        try:
+            data = response.json()
+        except ValueError:
+            return
+
+        message = str(data.get("error", {}).get("message", "")).lower()
+        if any(marker in message for marker in _UNAVAILABLE_CHANNEL_MARKERS):
+            self._channel_available = False
+            logger.warning(
+                "VLM model channel unavailable for model %s; "
+                "future requests will use local fallback.",
+                self.model,
+            )
+
+    @staticmethod
+    def _fallback_report(reason: str) -> QualityReport:
+        """质检不可用时给出保底通过结果，避免误判为低质量图片。"""
+        return QualityReport(
+            passed=True,
+            score=settings.quality_acceptable,
+            issues=[QualityIssue(
+                description=reason,
+                category=IssueCategory.physical,
+                severity=0.0,
+            )],
+            suggestions=["Manual review recommended"],
+        )
 
     async def check_and_suggest_fix_prompt(
         self,

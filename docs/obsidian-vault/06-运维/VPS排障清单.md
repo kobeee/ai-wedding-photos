@@ -34,10 +34,12 @@ docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Status}}"
 ### 处理方式
 
 ```bash
-docker rm -f wedding-photos-frontend-1 wedding-photos-backend-1 || true
-cd /opt/apps/wedding-photos/docker
-docker compose -f docker-compose.yml up -d --force-recreate
+cd /opt/apps/wedding-photos
+docker compose -p wedding-photos -f docker/docker-compose.yml ps
+docker compose -p wedding-photos -f docker/docker-compose.yml up -d frontend
 ```
+
+如果 `3080` 明确仍被错误栈占用，再定向清理残留容器，而不是盲目 `docker rm -f` 当前有效栈。
 
 ---
 
@@ -75,8 +77,8 @@ curl -I -s https://wedding.escapemobius.cc/images/generated-1773678492426.png
 ### 排查命令
 
 ```bash
-docker logs --tail 60 docker-frontend-1
-docker logs --tail 60 docker-backend-1
+docker logs --tail 60 wedding-photos-frontend-1
+docker logs --tail 60 wedding-photos-backend-1
 curl -i -s http://127.0.0.1:3080/api/health
 ```
 
@@ -117,8 +119,8 @@ curl -I -s https://wedding.escapemobius.cc/images/generated-1773678492426.png
 docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Status}}"
 
 # 当前栈状态
-cd /opt/apps/wedding-photos/docker
-docker compose -f docker-compose.yml ps
+cd /opt/apps/wedding-photos
+docker compose -p wedding-photos -f docker/docker-compose.yml ps
 
 # 后端健康
 curl -s http://127.0.0.1:3080/api/health

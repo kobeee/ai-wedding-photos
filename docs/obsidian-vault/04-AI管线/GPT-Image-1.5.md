@@ -6,7 +6,7 @@ related: [[Nano-Banana-Pro]], [[双模型协作]], [[VLM质检管线]], [[API设
 
 # GPT-Image-1.5
 
-> OpenAI gpt-image-1 图像生成/编辑模型，项目中负责面部情绪重绘和精细编辑。
+> OpenAI gpt-image-1.5 图像生成/编辑模型，项目中负责面部情绪重绘和精细编辑。
 > 在 [[双模型协作]] 中承担**面部情绪修复**的专项角色。
 
 ---
@@ -15,7 +15,7 @@ related: [[Nano-Banana-Pro]], [[双模型协作]], [[VLM质检管线]], [[API设
 
 | 维度 | 说明 |
 |------|------|
-| 模型名 | gpt-image-1 |
+| 模型名 | gpt-image-1.5 |
 | 擅长 | 面部表情控制、情绪重绘、精细局部编辑 |
 | 在项目中的角色 | 情绪错误修复、面部精修 |
 | 搭档 | [[Nano-Banana-Pro]]（底图渲染） |
@@ -53,7 +53,7 @@ client = openai.OpenAI(
 )
 
 response = client.images.generate(
-    model="gpt-image-1",
+    model="gpt-image-1.5",
     prompt="一位微笑的中国新娘，精致妆容，白色婚纱，暖色光影，电影级画质",
     n=1,
     size="1536x1024",
@@ -69,7 +69,7 @@ image_data = response.data[0].b64_json  # 或 response.data[0].url
 
 | 参数 | 类型 | 说明 | 可选值 |
 |------|------|------|--------|
-| `model` | string | 模型名 | `"gpt-image-1"` |
+| `model` | string | 模型名 | `"gpt-image-1.5"` |
 | `prompt` | string | 文本提示 | - |
 | `n` | int | 生成数量 | 1-4 |
 | `size` | string | 图片尺寸 | `"auto"`, `"1024x1024"`, `"1536x1024"`, `"1024x1536"` |
@@ -96,7 +96,7 @@ image_data = response.data[0].b64_json  # 或 response.data[0].url
 
 ```python
 response = client.images.edit(
-    model="gpt-image-1",
+    model="gpt-image-1.5",
     image=open("source.png", "rb"),
     prompt="将新娘的表情调整为幸福的微笑，保持其他部分不变",
     n=1,
@@ -108,7 +108,7 @@ response = client.images.edit(
 
 ```python
 response = client.images.edit(
-    model="gpt-image-1",
+    model="gpt-image-1.5",
     image=open("source.png", "rb"),
     mask=open("mask.png", "rb"),      # 遮罩区域会被重绘
     prompt="在遮罩区域绘制温暖的微笑表情",

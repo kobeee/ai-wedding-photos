@@ -8,6 +8,8 @@ venv/
 .venv/
 env/
 .env
+.env.runtime
+.env.backend
 
 # Node
 node_modules/

@@ -103,3 +103,27 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .waiting-center {
+    gap: 40px;
+    padding: 0 20px;
+    width: min(100%, 360px);
+  }
+  .waiting-ring { width: 120px; height: 120px; }
+  .waiting-texts h1 {
+    font-size: 18px;
+    letter-spacing: 2px;
+    line-height: 1.6;
+  }
+  .waiting-texts p { font-size: 13px; }
+  .waiting-bar { width: min(100%, 260px); }
+  .waiting-steps {
+    width: 100%;
+    align-items: flex-start;
+  }
+  .waiting-step span {
+    line-height: 1.5;
+  }
+}

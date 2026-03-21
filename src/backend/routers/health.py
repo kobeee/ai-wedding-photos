@@ -8,7 +8,7 @@ router = APIRouter(tags=["health"])
 @router.get("/api/health")
 async def health_check():
     """健康检查端点。"""
-    api_configured = bool(settings.laozhang_api_key)
+    api_configured = bool(settings.chat_api_key or settings.nano_banana_api_key)
     return {
         "status": "ok",
         "service": "lumiere-studio",
@@ -23,7 +23,10 @@ async def health_detail():
         "status": "ok",
         "service": settings.app_name,
         "debug": settings.debug,
-        "api_configured": bool(settings.laozhang_api_key),
+        "api_configured": bool(settings.chat_api_key or settings.nano_banana_api_key),
+        "chat_api_configured": bool(settings.chat_api_key),
+        "nano_api_configured": bool(settings.nano_banana_api_key),
+        "dedicated_nano_api_configured": bool(settings.laozhang_nano_api_key),
         "nano_banana_model": settings.nano_banana_model,
         "gpt_image_model": settings.gpt_image_model,
         "upload_dir": settings.upload_dir,

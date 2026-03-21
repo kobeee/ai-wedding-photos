@@ -180,7 +180,7 @@ export default function Landing() {
         <h2>准备好拥有你们的<br />专属数字婚纱大片了吗？</h2>
         <p>上传日常照，30秒后见证奇迹</p>
         <div className="final-cta__buttons">
-          <Link to="/upload" className="btn btn--gold btn--lg">免费体验一张</Link>
+          <Link to="/upload" className="btn btn--gold btn--lg final-cta__primary">免费试拍</Link>
           <a href="#faq" className="btn btn--outline btn--lg">了解更多</a>
         </div>
         <span className="final-cta__trust">无需注册  ·  免费体验  ·  24小时数据自动销毁</span>

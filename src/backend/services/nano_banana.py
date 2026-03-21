@@ -21,16 +21,18 @@ class NanoBananaService:
             f"{settings.laozhang_base_url}/v1beta/models/"
             f"{settings.nano_banana_model}:generateContent"
         )
-        self.headers = {
-            "Authorization": f"Bearer {settings.laozhang_api_key}",
+
+    def _headers(self) -> dict[str, str]:
+        return {
+            "x-goog-api-key": settings.nano_banana_api_key,
             "Content-Type": "application/json",
         }
 
     def _check_api_key(self) -> None:
-        if not settings.laozhang_api_key:
+        if not settings.nano_banana_api_key:
             raise RuntimeError(
-                "laozhang_api_key is not configured. "
-                "Set LAOZHANG_API_KEY in .env or environment variables."
+                "nano banana api key is not configured. "
+                "Set LAOZHANG_NANO_API_KEY or LAOZHANG_API_KEY."
             )
 
     def _extract_image_bytes(self, data: dict) -> bytes:
@@ -69,7 +71,7 @@ class NanoBananaService:
 
         async with httpx.AsyncClient(timeout=120) as client:
             resp = await client.post(
-                self.api_url, headers=self.headers, json=payload
+                self.api_url, headers=self._headers(), json=payload
             )
             resp.raise_for_status()
             return self._extract_image_bytes(resp.json())
@@ -111,7 +113,7 @@ class NanoBananaService:
 
         async with httpx.AsyncClient(timeout=120) as client:
             resp = await client.post(
-                self.api_url, headers=self.headers, json=payload
+                self.api_url, headers=self._headers(), json=payload
             )
             resp.raise_for_status()
             return self._extract_image_bytes(resp.json())
@@ -156,7 +158,7 @@ class NanoBananaService:
 
         async with httpx.AsyncClient(timeout=180) as client:
             resp = await client.post(
-                self.api_url, headers=self.headers, json=payload
+                self.api_url, headers=self._headers(), json=payload
             )
             resp.raise_for_status()
             return self._extract_image_bytes(resp.json())

@@ -20,15 +20,17 @@ class GPTImageService:
     def __init__(self) -> None:
         self.api_url = f"{settings.laozhang_base_url}/v1/images/generations"
         self.edit_url = f"{settings.laozhang_base_url}/v1/images/edits"
-        self.headers = {
-            "Authorization": f"Bearer {settings.laozhang_api_key}",
+
+    def _headers(self) -> dict[str, str]:
+        return {
+            "Authorization": f"Bearer {settings.gpt_image_api_key}",
         }
 
     def _check_api_key(self) -> None:
-        if not settings.laozhang_api_key:
+        if not settings.gpt_image_api_key:
             raise RuntimeError(
-                "laozhang_api_key is not configured. "
-                "Set LAOZHANG_API_KEY in .env or environment variables."
+                "gpt image api key is not configured. "
+                "Set LAOZHANG_API_KEY."
             )
 
     async def generate(
@@ -58,7 +60,7 @@ class GPTImageService:
         async with httpx.AsyncClient(timeout=120) as client:
             resp = await client.post(
                 self.api_url,
-                headers={**self.headers, "Content-Type": "application/json"},
+                headers={**self._headers(), "Content-Type": "application/json"},
                 json=payload,
             )
             resp.raise_for_status()
@@ -86,7 +88,7 @@ class GPTImageService:
         async with httpx.AsyncClient(timeout=120) as client:
             resp = await client.post(
                 self.api_url,
-                headers={**self.headers, "Content-Type": "application/json"},
+                headers={**self._headers(), "Content-Type": "application/json"},
                 json=payload,
             )
             resp.raise_for_status()
@@ -129,7 +131,7 @@ class GPTImageService:
             async with httpx.AsyncClient(timeout=120) as client:
                 resp = await client.post(
                     self.edit_url,
-                    headers=self.headers,
+                    headers=self._headers(),
                     files=files,
                 )
                 resp.raise_for_status()

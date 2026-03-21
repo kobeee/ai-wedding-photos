@@ -72,6 +72,7 @@ class FileInfo(BaseModel):
 
 class UploadResponse(BaseModel):
     user_id: str
+    session_token: str
     files: list[FileInfo]
 
 

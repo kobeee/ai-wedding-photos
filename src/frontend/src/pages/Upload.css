@@ -15,19 +15,25 @@
 
 .upload-title {
   text-align: center;
+  max-width: 42rem;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
 }
 
 .upload-title h1 {
   font-size: 36px;
   font-weight: 200;
   letter-spacing: 4px;
-  margin-bottom: 12px;
+  line-height: 1.25;
+  text-wrap: balance;
 }
 
 .upload-title p {
   font-size: 15px;
   color: var(--text-muted);
   letter-spacing: 0.5px;
+  line-height: 1.75;
 }
 
 .upload-cards {
@@ -130,12 +136,16 @@
 
 .upload-bottom {
   padding: 20px 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .upload-page .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
   padding: 18px 72px;
   border-radius: 100px;
   font-size: 16px;
@@ -152,4 +162,36 @@
 
 .upload-page .btn--gold:hover {
   background: var(--accent-gold-hover);
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .upload-main { padding: 48px 40px; }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .upload-main { padding: 32px 20px; gap: 36px; }
+  .upload-title {
+    max-width: 28rem;
+  }
+  .upload-title h1 {
+    font-size: 24px;
+    letter-spacing: 2px;
+    line-height: 1.4;
+  }
+  .upload-title p {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .upload-cards { flex-direction: column; gap: 20px; }
+  .upload-card { padding: 28px 20px; gap: 20px; }
+  .upload-card__label span { font-size: 16px; }
+  .upload-card__dropzone { min-height: 200px; }
+  .upload-card__thumb { width: 60px; height: 60px; }
+  .upload-bottom {
+    width: 100%;
+    padding-top: 8px;
+  }
+  .upload-page .btn { padding: 16px 48px; font-size: 15px; width: 100%; }
 }

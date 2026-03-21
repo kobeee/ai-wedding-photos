@@ -23,10 +23,10 @@ export default function StepHeader({ current, onClose }: Props) {
           const active = stepNum === current
           const upcoming = stepNum > current
           return (
-            <div key={i} className="step-header__step-group">
-              {i > 0 && (
-                <div className={`step-header__line ${stepNum <= current ? 'step-header__line--active' : ''}`} />
-              )}
+            <div
+              key={i}
+              className={`step-header__step-group ${i === steps.length - 1 ? 'step-header__step-group--last' : ''}`}
+            >
               <div className="step-header__step">
                 <div
                   className={[
@@ -39,6 +39,9 @@ export default function StepHeader({ current, onClose }: Props) {
                 </div>
                 <span className={done || active ? 'step-header__label--active' : ''}>{label}</span>
               </div>
+              {i < steps.length - 1 && (
+                <div className={`step-header__line ${stepNum < current ? 'step-header__line--active' : ''}`} />
+              )}
             </div>
           )
         })}

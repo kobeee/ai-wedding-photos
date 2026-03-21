@@ -11,6 +11,11 @@ from models.schemas import CameraSchema
 
 logger = logging.getLogger(__name__)
 
+_UNAVAILABLE_CHANNEL_MARKERS = (
+    "无可用渠道",
+    "no available channel",
+)
+
 # 套餐 → 场景语义映射（给 LLM 的上下文）
 _PACKAGE_CONTEXT: dict[str, str] = {
     "iceland": "冰岛极光旅拍：黑沙滩、极光、冰川、瀑布，北欧冷冽浪漫",
@@ -55,18 +60,44 @@ _DIRECTOR_SYSTEM_PROMPT = """你是一位顶级婚纱摄影导演，擅长将抽
 6. pose_direction 要自然、有情感张力
 7. 只输出 JSON，不要其他文字"""
 
+_DIRECTOR_RETRY_SUFFIX = (
+    "\n请只返回一行紧凑 JSON，不要 markdown，不要解释，不要额外文字。"
+)
+
 
 class DirectorService:
     """LLM 摄影导演：套餐 + 妆造 → CameraSchema → 渲染 Prompt。"""
 
     def __init__(self) -> None:
         self.api_url = f"{settings.laozhang_base_url}/v1/chat/completions"
+        self._channel_available = True
 
     def _headers(self) -> dict[str, str]:
         return {
-            "Authorization": f"Bearer {settings.laozhang_api_key}",
+            "Authorization": f"Bearer {settings.chat_api_key}",
             "Content-Type": "application/json",
         }
+
+    async def _request_schema(self, user_msg: str) -> CameraSchema:
+        payload = {
+            "model": settings.director_model,
+            "messages": [
+                {"role": "system", "content": _DIRECTOR_SYSTEM_PROMPT},
+                {"role": "user", "content": user_msg},
+            ],
+            "max_tokens": 1024,
+            "temperature": 0.2,
+        }
+
+        async with httpx.AsyncClient(timeout=45) as client:
+            resp = await client.post(
+                self.api_url, headers=self._headers(), json=payload,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        raw = data["choices"][0]["message"]["content"]
+        return self._parse_schema(raw)
 
     async def direct(
         self,
@@ -79,7 +110,7 @@ class DirectorService:
         LLM 摄影导演：套餐 → Camera Schema → 渲染 Prompt。
         返回 (CameraSchema, 最终渲染 prompt 字符串)。
         """
-        if not settings.laozhang_api_key:
+        if not settings.chat_api_key or not self._channel_available:
             return self._fallback(package_id, makeup_style, gender)
 
         scene_ctx = _PACKAGE_CONTEXT.get(package_id, _PACKAGE_CONTEXT["minimal"])
@@ -93,32 +124,42 @@ class DirectorService:
         if preferences:
             user_msg += f"用户额外偏好：{json.dumps(preferences, ensure_ascii=False)}\n"
 
-        payload = {
-            "model": settings.director_model,
-            "messages": [
-                {"role": "system", "content": _DIRECTOR_SYSTEM_PROMPT},
-                {"role": "user", "content": user_msg},
-            ],
-            "max_tokens": 512,
-            "temperature": 0.7,
-        }
-
         try:
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.post(
-                    self.api_url, headers=self._headers(), json=payload,
+            try:
+                schema = await self._request_schema(user_msg)
+            except json.JSONDecodeError:
+                logger.warning(
+                    "Director returned non-JSON content for model %s; retrying once.",
+                    settings.director_model,
                 )
-                resp.raise_for_status()
-                data = resp.json()
+                schema = await self._request_schema(user_msg + _DIRECTOR_RETRY_SUFFIX)
 
-            raw = data["choices"][0]["message"]["content"]
-            schema = self._parse_schema(raw)
             prompt = self._schema_to_prompt(schema, gender)
             return schema, prompt
 
+        except httpx.HTTPStatusError as exc:
+            self._maybe_disable_channel(exc.response)
+            logger.exception("Director LLM call failed, using fallback")
+            return self._fallback(package_id, makeup_style, gender)
         except Exception:
             logger.exception("Director LLM call failed, using fallback")
             return self._fallback(package_id, makeup_style, gender)
+
+    def _maybe_disable_channel(self, response: httpx.Response) -> None:
+        """在供应商明确表示当前 key 无聊天渠道时，后续直接走 fallback。"""
+        try:
+            data = response.json()
+        except ValueError:
+            return
+
+        message = str(data.get("error", {}).get("message", "")).lower()
+        if any(marker in message for marker in _UNAVAILABLE_CHANNEL_MARKERS):
+            self._channel_available = False
+            logger.warning(
+                "Director model channel unavailable for model %s; "
+                "future requests will use local fallback.",
+                settings.director_model,
+            )
 
     def _parse_schema(self, raw: str) -> CameraSchema:
         """解析 LLM 返回的 JSON。"""

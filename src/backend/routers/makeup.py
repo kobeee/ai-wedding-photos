@@ -76,10 +76,10 @@ async def generate_makeup(req: MakeupRequest):
     如果用户已上传照片，会基于上传照片进行图生图；
     否则直接文生图。
     """
-    if not settings.laozhang_api_key:
+    if not settings.nano_banana_api_key:
         raise HTTPException(
             status_code=503,
-            detail="AI service not configured. Set LAOZHANG_API_KEY.",
+            detail="Nano Banana service not configured. Set LAOZHANG_NANO_API_KEY or LAOZHANG_API_KEY.",
         )
 
     ref_image_path = _find_user_reference_image(req.user_id)

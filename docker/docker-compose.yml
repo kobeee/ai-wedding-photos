@@ -18,8 +18,10 @@ services:
     volumes:
       - backend-data:/app/data
     restart: unless-stopped
+    env_file:
+      - ../.env.runtime
     environment:
-      - PYTHONUNBUFFERED=1
+      PYTHONUNBUFFERED: "1"
 
   acp:
     build:
@@ -31,8 +33,10 @@ services:
     volumes:
       - backend-data:/app/data
     restart: unless-stopped
+    env_file:
+      - ../.env.runtime
     environment:
-      - PYTHONUNBUFFERED=1
+      PYTHONUNBUFFERED: "1"
 
 volumes:
   backend-data:
