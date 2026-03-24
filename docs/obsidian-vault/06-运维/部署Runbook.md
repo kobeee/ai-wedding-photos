@@ -89,6 +89,19 @@ docker compose -p wedding-photos -f docker/docker-compose.yml ps
   - 你以为已经发布
   - 实际线上仍在跑旧后端
 
+### 2.1 若误起了错误 project，立即清理
+
+```bash
+cd /opt/apps/wedding-photos/docker
+docker compose -p docker -f docker-compose.yml down
+```
+
+说明：
+
+- 这一步只用于清理误起的 `docker-*` 栈
+- 不能替代正确的 `wedding-photos` 发布命令
+- 若不清理，后续排障时极易把“新容器”和“真实线上容器”看混
+
 ### 3. 验证容器是否正确接管流量
 
 ```bash

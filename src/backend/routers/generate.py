@@ -1,13 +1,27 @@
+"""生成管线 — 基于上下文工程的 AI 婚纱照生成。
+
+Phase 1 改造：
+- Director CameraSchema → context/ CreativeBrief
+- _collect_reference_images → reference_selector.select_references
+- 硬编码 variant_hints → variant_planner.get_variants
+- 机械拼接 prompt → prompt_assembler.assemble_generation_prompt
+"""
+
 from __future__ import annotations
 
 import asyncio
 import logging
 import uuid
-from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 
 from config import settings
+from context.briefs import get_brief
+from context.prompt_assembler import assemble_generation_prompt
+from context.reference_selector import select_references
+from context.slot_renderer import render_slots
+from context.thresholds import decide_repair, meets_delivery_floor, RepairMode
+from context.variant_planner import get_variants
 from models.schemas import (
     GenerateRequest,
     GenerateResponse,
@@ -78,19 +92,6 @@ PACKAGES: dict[str, PackageInfo] = {
     ),
 }
 
-def _collect_reference_images(user_id: str) -> list[tuple[bytes, str]]:
-    """收集用户上传的所有照片作为参考图（同步读取）。"""
-    upload_dir = user_upload_dir(user_id)
-    refs: list[tuple[bytes, str]] = []
-    for ext_pattern in ("*.jpg", "*.jpeg", "*.png"):
-        for fpath in sorted(upload_dir.glob(ext_pattern)):
-            data = fpath.read_bytes()
-            mime = "image/png" if fpath.suffix.lower() == ".png" else "image/jpeg"
-            refs.append((data, mime))
-            if len(refs) >= 6:
-                return refs
-    return refs
-
 
 async def _dual_path_fix(
     img_bytes: bytes,
@@ -99,21 +100,17 @@ async def _dual_path_fix(
     refs: list[tuple[bytes, str]],
     user_id: str,
 ) -> bytes:
-    """
-    双路径修复：
-    - physical issues → Nano Banana 局部重绘
-    - emotional issues → GPT Image I2I 修复
-    """
+    """双路径修复（Phase 1 暂不改动，Phase 2 接入 repair_mode 分流）。"""
     physical = report.physical_issues
     emotional = report.emotional_issues
 
     result = img_bytes
 
     if physical:
-        phys_desc = "; ".join(i.description for i in physical)
+        phys_desc = "; ".join(report.repair_hints or [i.description for i in physical])
         fix_prompt = (
             f"Fix these physical issues in the wedding photo: {phys_desc}. "
-            f"Maintain the original composition and style. "
+            f"Preserve the original composition, facial identity, and style. "
             f"Ensure correct anatomy, no artifacts, consistent lighting."
         )
         try:
@@ -126,20 +123,18 @@ async def _dual_path_fix(
             logger.warning("Physical fix via Nano failed for user %s", user_id)
 
     if emotional:
-        emo_desc = "; ".join(i.description for i in emotional)
+        emo_desc = "; ".join(report.repair_hints or [i.description for i in emotional])
         fix_prompt = (
             f"Improve the emotional quality: {emo_desc}. "
             f"Make expressions more natural and warm. "
-            f"Keep the same scene, lighting, and wardrobe."
+            f"Preserve the facial identity, scene, lighting, and wardrobe."
         )
         try:
-            # 保存临时文件给 GPT edit API
             _, tmp_path = await save_generated_image(user_id, result, ext=".png")
             edit_url = await gpt_image_service.edit(
                 image_path=tmp_path,
                 prompt=fix_prompt,
             )
-            # 下载编辑后的图片
             import httpx as _httpx
             async with _httpx.AsyncClient(timeout=60) as client:
                 resp = await client.get(edit_url)
@@ -153,76 +148,92 @@ async def _dual_path_fix(
 
 
 async def _generation_pipeline(task_id: str, req: GenerateRequest) -> None:
-    """
-    生成流水线（后台任务）:
-    1. 收集参考图
-    2. Director 生成 Camera Schema → 渲染 Prompt
-    3. Nano Banana Pro 生成底图
-    4. VLM 质检 + 双路径修复（最多 3 轮）
-    5. 质量评分决定流程走向
+    """生成流水线（基于上下文工程重构）:
+
+    1. 筛选参考图（reference_selector）
+    2. 获取 Creative Brief + 渲染动态插槽
+    3. 按 variant 逐张生成
+    4. VLM 质检 + 双路径修复（最多 N 轮）
     """
     task = _tasks[task_id]
     task.status = TaskStatusEnum.processing
-    task.message = "收集参考图..."
+    task.message = "筛选参考图..."
     task.progress = 5
 
     try:
-        # Step 1: 收集参考图
-        refs = _collect_reference_images(req.user_id)
-        task.progress = 10
-        task.message = f"找到 {len(refs)} 张参考图，正在生成拍摄方案..."
+        # Step 1: 筛选参考图
+        upload_dir = user_upload_dir(req.user_id)
+        ref_set = select_references(upload_dir)
+        selected_refs = ref_set.all_refs
 
-        # Step 2: Director 生成 Camera Schema
+        task.progress = 8
+        if ref_set.has_identity:
+            task.message = f"找到 {ref_set.count} 张参考图，准备创意方案..."
+        else:
+            task.message = "未找到参考图，将生成风格样片..."
+
+        # Step 2: Creative Brief + 动态插槽
+        brief = get_brief(req.package_id)
+
         makeup = req.makeup_style.value if req.makeup_style else "natural"
-        gender = req.gender.value if req.gender else "female"
+        gender = req.gender.value if req.gender else "couple"
+        preferences = {
+            k: v for k, v in {
+                "groom_style": req.groom_style,
+                "bride_style": req.bride_style,
+            }.items() if v
+        } or None
 
-        camera_schema, base_prompt = await director_service.direct(
-            package_id=req.package_id,
+        slots = render_slots(
             makeup_style=makeup,
             gender=gender,
-            preferences={
-                k: v for k, v in {
-                    "groom_style": req.groom_style,
-                    "bride_style": req.bride_style,
-                }.items() if v
-            } or None,
+            preferences=preferences,
         )
-        task.progress = 15
-        task.message = f"拍摄方案就绪：{camera_schema.scene[:30]}..."
+
+        # Phase 3: Director 编辑模式 — 只在有偏好时调用
+        if preferences:
+            task.message = "根据您的偏好调整创意方案..."
+            brief = await director_service.edit_brief(brief, preferences)
+
+        # Step 3: 获取变体计划
+        photos_per_package = max(settings.photos_per_package, 1)
+        max_fix_rounds = max(settings.max_fix_rounds, 1)
+        variants = get_variants(brief, count=photos_per_package)
+
+        task.progress = 12
+        task.message = f"创意方案就绪：{brief.story[:30]}..."
 
         result_urls: list[str] = []
         total_score = 0.0
+        rejected_photos = 0
 
-        # 变体 prompt 后缀
-        variant_hints = [
-            "Close-up intimate portrait, gentle expressions.",
-            "Full-body shot, both standing side by side.",
-            "Candid moment, looking at each other with genuine smiles.",
-            "Artistic angle, walking together into the distance.",
-        ]
+        for i, variant in enumerate(variants):
+            step_base = 12 + i * (88 // photos_per_package)
 
-        photos_per_package = max(settings.photos_per_package, 1)
-        max_fix_rounds = max(settings.max_fix_rounds, 1)
+            # 组装 prompt
+            prompt = assemble_generation_prompt(
+                brief=brief,
+                variant=variant,
+                slots=slots,
+                has_refs=ref_set.has_identity,
+                has_couple_refs=ref_set.has_couple_identity,
+            )
 
-        for i in range(photos_per_package):
-            step_base = 15 + i * 20
-
-            variant_prompt = f"{base_prompt} {variant_hints[i % len(variant_hints)]}"
             task.progress = step_base
             task.message = f"正在生成第 {i + 1}/{photos_per_package} 张..."
 
-            # Step 3: 生成底图
+            # Step 4: 生成底图
             img_bytes: bytes | None = None
             for attempt in range(3):
                 try:
-                    if refs:
+                    if selected_refs:
                         img_bytes = await nano_banana_service.multi_reference_generate(
-                            prompt=variant_prompt,
-                            reference_images=refs,
+                            prompt=prompt,
+                            reference_images=selected_refs,
                         )
                     else:
                         img_bytes = await nano_banana_service.text_to_image(
-                            prompt=variant_prompt,
+                            prompt=prompt,
                         )
                     break
                 except Exception:
@@ -237,74 +248,125 @@ async def _generation_pipeline(task_id: str, req: GenerateRequest) -> None:
             if img_bytes is None:
                 continue
 
-            task.progress = step_base + 8
+            task.progress = step_base + (44 // photos_per_package)
             task.message = f"质检第 {i + 1} 张..."
             task.status = TaskStatusEnum.quality_check
 
-            # Step 4: VLM 质检 + 双路径修复循环
+            # Step 5: VLM 质检 + thresholds 决策修复循环
+            brief_summary = f"{brief.story} {brief.emotion}"
             photo_score = 0.0
             for fix_round in range(max_fix_rounds):
-                report, fix_prompt = await vlm_checker_service.check_and_suggest_fix_prompt(
+                report, _ = await vlm_checker_service.check_and_suggest_fix_prompt(
                     image_data=img_bytes,
-                    original_prompt=variant_prompt,
+                    original_prompt=prompt,
+                    brief_summary=brief_summary,
                 )
                 photo_score = report.score
 
+                if report.inspection_unavailable:
+                    raise RuntimeError(
+                        "质量检查服务暂不可用，已停止交付以避免输出未审图像",
+                    )
+
                 logger.info(
-                    "Photo %d round %d: score=%.2f, passed=%s, issues=%d",
-                    i + 1, fix_round + 1, report.score, report.passed,
-                    len(report.issues),
+                    "Photo %d round %d: score=%.2f, hard_fail=%s, "
+                    "identity=%.2f, alignment=%.2f, aesthetic=%.2f, issues=%d",
+                    i + 1, fix_round + 1, report.score, report.hard_fail,
+                    report.identity_match, report.brief_alignment,
+                    report.aesthetic_score, len(report.issues),
                 )
 
-                # 质量评分决策
-                if report.score >= settings.quality_excellent:
-                    # 优秀，直接交付
-                    break
-                elif report.score >= settings.quality_acceptable:
-                    # 合格，可以交付
-                    break
-                elif report.score >= settings.quality_fixable:
-                    # 需修复
-                    if fix_round < max_fix_rounds - 1:
-                        task.message = f"修复第 {i + 1} 张（第 {fix_round + 1} 轮）..."
-                        task.status = TaskStatusEnum.processing
-                        img_bytes = await _dual_path_fix(
-                            img_bytes, report, variant_prompt, refs, req.user_id,
-                        )
-                    # 最后一轮修复后直接用
-                else:
-                    # < 0.70 重新生成
-                    if fix_round < max_fix_rounds - 1:
-                        task.message = f"重新生成第 {i + 1} 张..."
-                        task.status = TaskStatusEnum.processing
-                        try:
-                            if refs:
-                                img_bytes = await nano_banana_service.multi_reference_generate(
-                                    prompt=variant_prompt,
-                                    reference_images=refs,
-                                )
-                            else:
-                                img_bytes = await nano_banana_service.text_to_image(
-                                    prompt=variant_prompt,
-                                )
-                        except Exception:
-                            logger.warning("Regeneration failed for photo %d", i + 1)
-                            break
+                # Phase 2: thresholds 决策
+                decision = decide_repair(
+                    hard_fail=report.hard_fail,
+                    identity_match=report.identity_match,
+                    brief_alignment=report.brief_alignment,
+                    aesthetic_score=report.aesthetic_score,
+                    fix_round=fix_round,
+                    max_rounds=max_fix_rounds,
+                )
 
-            total_score += photo_score
+                logger.info(
+                    "Photo %d decision: %s (%s)",
+                    i + 1, decision.mode.value, decision.reason,
+                )
+
+                if decision.mode == RepairMode.deliver:
+                    break
+                elif decision.mode == RepairMode.local_fix:
+                    task.message = f"修复第 {i + 1} 张（第 {fix_round + 1} 轮）..."
+                    task.status = TaskStatusEnum.processing
+                    img_bytes = await _dual_path_fix(
+                        img_bytes, report, prompt, selected_refs, req.user_id,
+                    )
+                elif decision.mode == RepairMode.regenerate:
+                    task.message = f"重新生成第 {i + 1} 张..."
+                    task.status = TaskStatusEnum.processing
+                    try:
+                        if selected_refs:
+                            img_bytes = await nano_banana_service.multi_reference_generate(
+                                prompt=prompt,
+                                reference_images=selected_refs,
+                            )
+                        else:
+                            img_bytes = await nano_banana_service.text_to_image(
+                                prompt=prompt,
+                            )
+                    except Exception:
+                        logger.warning("Regeneration failed for photo %d", i + 1)
+                        break
+                elif decision.mode == RepairMode.reject:
+                    rejected_photos += 1
+                    logger.warning(
+                        "Photo %d rejected after %d rounds: %s",
+                        i + 1,
+                        fix_round + 1,
+                        decision.reason,
+                    )
+                    img_bytes = None
+                    break
+
+            if img_bytes is None:
+                continue
+
+            if not meets_delivery_floor(photo_score):
+                rejected_photos += 1
+                logger.warning(
+                    "Photo %d blocked by final delivery floor: %.2f",
+                    i + 1,
+                    photo_score,
+                )
+                continue
 
             # 保存结果
-            file_id, path = await save_generated_image(req.user_id, img_bytes)
+            total_score += photo_score
+            _, path = await save_generated_image(req.user_id, img_bytes)
             url = f"/api/files/outputs/{req.user_id}/{path.name}"
             result_urls.append(url)
             task.status = TaskStatusEnum.processing
 
-        # Step 5: 完成
+        # Step 6: 完成
+        if not result_urls:
+            task.progress = 100
+            task.status = TaskStatusEnum.failed
+            task.quality_score = 0.0
+            if rejected_photos:
+                task.message = "本次生成未产出可交付照片，请调整参考图或稍后重试"
+            else:
+                task.message = "生成未产出结果，请稍后重试"
+            return
+
         task.result_urls = result_urls
         task.progress = 100
         task.status = TaskStatusEnum.completed
         task.quality_score = total_score / max(len(result_urls), 1)
-        task.message = f"生成完成，共 {len(result_urls)} 张，综合评分 {task.quality_score:.2f}"
+        if rejected_photos:
+            task.message = (
+                f"生成完成，共交付 {len(result_urls)} 张，拦截 {rejected_photos} 张，"
+                f"综合评分 {task.quality_score:.2f}"
+            )
+        else:
+            task.message = f"生成完成，共 {len(result_urls)} 张，综合评分 {task.quality_score:.2f}"
         logger.info("Task %s completed: %d photos, score=%.2f",
                      task_id, len(result_urls), task.quality_score)
 

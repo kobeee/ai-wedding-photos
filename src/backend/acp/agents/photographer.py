@@ -124,13 +124,16 @@ async def wedding_photographer(
             )
             if report.passed and report.score >= 0.85:
                 break
+            if report.inspection_unavailable:
+                break
             if fix_prompt:
                 yield {
                     "thought": f"第 {round_num + 1} 轮修复中..."
                 }
                 img_bytes = (
-                    await nano_banana_service.text_to_image(
+                    await nano_banana_service.image_to_image(
                         prompt=fix_prompt,
+                        image_data=img_bytes,
                     )
                 )
     except Exception as e:

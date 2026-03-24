@@ -1,3 +1,11 @@
+"""VLM 质检服务 — 基于上下文工程的 hard/soft fail 双层判定。
+
+Phase 2 升级：
+- 质检 prompt 加入创意意图（brief_summary）
+- 输出结构拆为 hard_fail + identity_match + brief_alignment + aesthetic_score
+- 决策逻辑委托给 context/thresholds.py
+"""
+
 from __future__ import annotations
 
 import base64
@@ -20,11 +28,23 @@ _UNAVAILABLE_CHANNEL_MARKERS = (
 
 @dataclass
 class QualityReport:
-    """图片质检结果。"""
+    """图片质检结果 — Phase 2 升级版。"""
+
     passed: bool = True
-    score: float = 1.0  # 0.0 ~ 1.0
+    score: float = 1.0  # 向后兼容，= avg(identity, alignment, aesthetic)
+
+    # Phase 2 新增：三维评分
+    hard_fail: bool = False
+    identity_match: float = 0.85
+    brief_alignment: float = 0.85
+    aesthetic_score: float = 0.85
+    inspection_unavailable: bool = False
+
     issues: list[QualityIssue] = field(default_factory=list)
     suggestions: list[str] = field(default_factory=list)
+
+    # 修复建议（由 VLM 直接给出）
+    repair_hints: list[str] = field(default_factory=list)
 
     @property
     def physical_issues(self) -> list[QualityIssue]:
@@ -36,51 +56,51 @@ class QualityReport:
 
     @property
     def issue_descriptions(self) -> list[str]:
-        """向后兼容：返回纯文本 issue 列表。"""
         return [i.description for i in self.issues]
 
 
-# 质检用的系统 prompt
-_CHECKER_SYSTEM_PROMPT = """你是一个专业的婚纱照质检AI。请仔细检查这张AI生成的婚纱照，判断是否存在以下问题：
+# ---------------------------------------------------------------------------
+# 质检 System Prompt — 加入创意意图对照
+# ---------------------------------------------------------------------------
 
-物理类问题 (physical)：
-1. 手指畸形（多指、少指、扭曲）
-2. 穿模问题（衣物穿过身体、首饰嵌入皮肤）
-3. 比例失调（头身比异常、四肢长度不对）
-4. 背景穿帮（不合理的物体、文字、水印）
-5. 光影错误（光源方向不一致、阴影缺失或错位）
-6. 边缘瑕疵（模糊过渡、锯齿、不自然的融合）
+_CHECKER_SYSTEM_PROMPT = """\
+You are a demanding wedding photography director reviewing an AI-generated image.
 
-情绪类问题 (emotional)：
-1. 面部表情僵硬或不自然
-2. 眼神空洞、无交流感
-3. 姿态不协调、缺乏情感张力
-4. 整体氛围与场景不匹配
+You evaluate THREE dimensions independently:
 
-请用JSON格式返回结果：
+1. **identity_match** (0.0-1.0): Does the person in the generated image look like \
+the same person from the reference photos? Score facial similarity, skin tone, \
+body proportions. If no reference was provided, score 0.85 by default.
+
+2. **brief_alignment** (0.0-1.0): Does the image match the creative intent? \
+Is the scene, mood, wardrobe, and overall narrative consistent with what was requested?
+
+3. **aesthetic_score** (0.0-1.0): Is it a beautiful, professional wedding photo? \
+Consider composition, lighting, color harmony, and emotional impact.
+
+Also check for **hard failures** — issues that MUST be fixed before delivery:
+- Extra or missing fingers/limbs
+- Body parts clipping through clothing or objects
+- Severely distorted facial structure
+- Major background artifacts (text, watermarks, impossible objects)
+- Person is blurry or unrecognizable
+
+Respond ONLY with this JSON (no markdown, no explanation):
 {
-  "passed": true/false,
-  "score": 0.0-1.0,
+  "hard_fail": true/false,
+  "identity_match": 0.0-1.0,
+  "brief_alignment": 0.0-1.0,
+  "aesthetic_score": 0.0-1.0,
   "issues": [
-    {"description": "问题描述", "category": "physical或emotional", "severity": 0.0-1.0}
+    {"description": "...", "category": "physical" or "emotional", "severity": 0.0-1.0, "blocking": true/false}
   ],
-  "suggestions": ["修复建议1", "修复建议2"]
-}
-
-评分标准：
-- 0.95+ 优秀，直接交付
-- 0.85-0.94 合格
-- 0.70-0.84 需修复
-- <0.70 需重新生成
+  "repair_hints": ["specific fix instruction 1", "specific fix instruction 2"]
+}\
 """
 
 
 class VLMCheckerService:
-    """
-    VLM 质检服务。
-    利用多模态大模型检测 AI 生成婚纱照中的瑕疵。
-    通过 laozhang.ai 代理调用 ChatCompletion with vision。
-    """
+    """VLM 质检服务 — 三维评分 + hard/soft fail。"""
 
     def __init__(self) -> None:
         self.api_url = f"{settings.laozhang_base_url}/v1/chat/completions"
@@ -95,20 +115,15 @@ class VLMCheckerService:
 
     def _check_api_key(self) -> None:
         if not settings.chat_api_key:
-            raise RuntimeError(
-                "chat api key is not configured. "
-                "Set LAOZHANG_API_KEY."
-            )
+            raise RuntimeError("chat api key is not configured. Set LAOZHANG_API_KEY.")
 
     async def check_image(
         self,
         image_data: bytes,
+        brief_summary: str = "",
         mime_type: str = "image/png",
     ) -> QualityReport:
-        """
-        对一张图片执行质检。
-        返回 QualityReport。
-        """
+        """对一张图片执行质检，可选传入创意意图摘要。"""
         self._check_api_key()
 
         if not self._channel_available:
@@ -117,23 +132,20 @@ class VLMCheckerService:
         b64_image = base64.b64encode(image_data).decode()
         data_uri = f"data:{mime_type};base64,{b64_image}"
 
+        # 用户消息：图片 + 创意意图（如果有）
+        user_parts: list[dict] = [
+            {"type": "image_url", "image_url": {"url": data_uri}},
+        ]
+        user_text = "Review this AI-generated wedding photo."
+        if brief_summary:
+            user_text += f"\n\nCreative intent: {brief_summary}"
+        user_parts.append({"type": "text", "text": user_text})
+
         payload = {
             "model": self.model,
             "messages": [
                 {"role": "system", "content": _CHECKER_SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": data_uri},
-                        },
-                        {
-                            "type": "text",
-                            "text": "请对这张AI生成的婚纱照进行质量检查。",
-                        },
-                    ],
-                },
+                {"role": "user", "content": user_parts},
             ],
             "max_tokens": 1024,
             "temperature": 0.1,
@@ -142,7 +154,7 @@ class VLMCheckerService:
         try:
             async with httpx.AsyncClient(timeout=60) as client:
                 resp = await client.post(
-                    self.api_url, headers=self._headers(), json=payload
+                    self.api_url, headers=self._headers(), json=payload,
                 )
                 resp.raise_for_status()
                 data = resp.json()
@@ -159,10 +171,10 @@ class VLMCheckerService:
             return self._fallback_report("Quality check service unavailable")
 
     def _parse_report(self, raw_content: str) -> QualityReport:
-        """解析模型返回的 JSON 格式质检报告。"""
+        """解析 VLM 返回的 JSON 质检报告。"""
         content = raw_content.strip()
 
-        # 去掉可能的 markdown 代码块包裹
+        # 去掉 markdown 代码块
         if content.startswith("```"):
             lines = content.split("\n")
             json_lines = []
@@ -180,7 +192,15 @@ class VLMCheckerService:
         try:
             result = json.loads(content)
 
-            # 解析带分类的 issues
+            hard_fail = bool(result.get("hard_fail", False))
+            identity = float(result.get("identity_match", 0.85))
+            alignment = float(result.get("brief_alignment", 0.85))
+            aesthetic = float(result.get("aesthetic_score", 0.85))
+
+            # 向后兼容 score 字段
+            score = (identity + alignment + aesthetic) / 3
+
+            # 解析 issues
             raw_issues = result.get("issues", [])
             issues: list[QualityIssue] = []
             for item in raw_issues:
@@ -196,35 +216,35 @@ class VLMCheckerService:
                         severity=float(item.get("severity", 0.5)),
                     ))
                 elif isinstance(item, str):
-                    # 向后兼容纯字符串 issues
                     issues.append(QualityIssue(
                         description=item,
                         category=self._guess_category(item),
                         severity=0.5,
                     ))
 
+            repair_hints = result.get("repair_hints", [])
+            if isinstance(repair_hints, str):
+                repair_hints = [repair_hints]
+
+            passed = not hard_fail and score >= 0.80
+
             return QualityReport(
-                passed=result.get("passed", True),
-                score=float(result.get("score", 1.0)),
+                passed=passed,
+                score=score,
+                hard_fail=hard_fail,
+                identity_match=identity,
+                brief_alignment=alignment,
+                aesthetic_score=aesthetic,
                 issues=issues,
                 suggestions=result.get("suggestions", []),
+                repair_hints=repair_hints,
             )
         except (json.JSONDecodeError, ValueError):
             logger.warning("Failed to parse VLM report, raw: %s", raw_content[:200])
-            return QualityReport(
-                passed=True,
-                score=0.5,
-                issues=[QualityIssue(
-                    description="Quality report parsing failed",
-                    category=IssueCategory.physical,
-                    severity=0.3,
-                )],
-                suggestions=["Manual review recommended"],
-            )
+            return self._fallback_report("Quality report parsing failed")
 
     @staticmethod
     def _guess_category(description: str) -> IssueCategory:
-        """根据描述文本猜测问题分类。"""
         emotional_keywords = [
             "expression", "emotion", "eye", "gaze", "smile", "mood",
             "表情", "情绪", "眼神", "笑", "氛围", "僵硬",
@@ -240,7 +260,6 @@ class VLMCheckerService:
             data = response.json()
         except ValueError:
             return
-
         message = str(data.get("error", {}).get("message", "")).lower()
         if any(marker in message for marker in _UNAVAILABLE_CHANNEL_MARKERS):
             self._channel_available = False
@@ -252,14 +271,19 @@ class VLMCheckerService:
 
     @staticmethod
     def _fallback_report(reason: str) -> QualityReport:
-        """质检不可用时给出保底通过结果，避免误判为低质量图片。"""
+        """质检不可用时显式阻断交付，避免静默放行。"""
         return QualityReport(
-            passed=True,
-            score=settings.quality_acceptable,
+            passed=False,
+            score=0.0,
+            hard_fail=False,
+            identity_match=0.0,
+            brief_alignment=0.0,
+            aesthetic_score=0.0,
+            inspection_unavailable=True,
             issues=[QualityIssue(
                 description=reason,
                 category=IssueCategory.physical,
-                severity=0.0,
+                severity=1.0,
             )],
             suggestions=["Manual review recommended"],
         )
@@ -268,26 +292,29 @@ class VLMCheckerService:
         self,
         image_data: bytes,
         original_prompt: str,
+        brief_summary: str = "",
         mime_type: str = "image/png",
     ) -> tuple[QualityReport, str | None]:
-        """
-        质检并在不通过时生成修复 prompt。
-        返回 (report, fix_prompt or None)。
-        """
-        report = await self.check_image(image_data, mime_type)
+        """质检 + 修复 prompt。brief_summary 用于对照创意意图审片。"""
+        report = await self.check_image(image_data, brief_summary, mime_type)
 
-        if report.passed and report.score >= settings.quality_acceptable:
+        if report.inspection_unavailable:
             return report, None
 
-        # 生成修复 prompt（合并所有 issue 描述）
-        issues_text = "; ".join(i.description for i in report.issues)
-        fix_prompt = (
-            f"Based on the original prompt: '{original_prompt}', "
-            f"fix the following issues: {issues_text}. "
-            f"Ensure the result has no artifacts, correct anatomy, "
-            f"natural expressions, and consistent lighting."
-        )
+        if report.passed:
+            return report, None
 
+        # 优先用 VLM 给出的 repair_hints
+        if report.repair_hints:
+            fix_text = "; ".join(report.repair_hints)
+        else:
+            fix_text = "; ".join(i.description for i in report.issues)
+
+        fix_prompt = (
+            f"Fix these issues: {fix_text}. "
+            f"Preserve the facial identity, composition, and overall style. "
+            f"Ensure correct anatomy and natural expressions."
+        )
         return report, fix_prompt
 
 

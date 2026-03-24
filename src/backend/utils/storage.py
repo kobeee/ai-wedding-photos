@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import time
 import uuid
@@ -38,7 +39,17 @@ def generate_file_id() -> str:
     return uuid.uuid4().hex[:12]
 
 
-async def save_upload_file(user_id: str, filename: str, content: bytes) -> tuple[str, Path]:
+def upload_metadata_path(image_path: Path) -> Path:
+    """返回上传图片对应的 sidecar 元数据路径。"""
+    return image_path.with_suffix(image_path.suffix + ".meta.json")
+
+
+async def save_upload_file(
+    user_id: str,
+    filename: str,
+    content: bytes,
+    role: str | None = None,
+) -> tuple[str, Path]:
     """
     保存上传文件，返回 (file_id, 完整路径)。
     """
@@ -47,6 +58,16 @@ async def save_upload_file(user_id: str, filename: str, content: bytes) -> tuple
     dest = user_upload_dir(user_id) / f"{file_id}{ext}"
     async with aiofiles.open(dest, "wb") as f:
         await f.write(content)
+
+    # 可选 sidecar 元数据，用于 couple 场景的参考图筛选。
+    metadata = {
+        "original_filename": filename,
+        "role": role or "",
+    }
+    meta_dest = upload_metadata_path(dest)
+    async with aiofiles.open(meta_dest, "w", encoding="utf-8") as f:
+        await f.write(json.dumps(metadata, ensure_ascii=False))
+
     return file_id, dest
 
 

@@ -1,7 +1,7 @@
 ---
 tags: [AI管线, API, Gemini, 图像生成]
 created: 2026-03-17
-related: [[GPT-Image-1.5]], [[双模型协作]], [[VLM质检管线]], [[API设计]]
+related: [[GPT-Image-1.5]], [[双模型协作]], [[VLM质检管线]], [[API设计]], [[上下文工程]], [[上下文工程-工程落地版]]
 ---
 
 # Nano-Banana-Pro

@@ -1,7 +1,7 @@
 ---
 tags: [AI管线, 质检, VLM, 核心壁垒]
 created: 2026-03-17
-related: [[Nano-Banana-Pro]], [[GPT-Image-1.5]], [[双模型协作]], [[PRD分析]]
+related: [[Nano-Banana-Pro]], [[GPT-Image-1.5]], [[双模型协作]], [[PRD分析]], [[上下文工程]]
 ---
 
 # VLM 质检管线
