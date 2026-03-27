@@ -39,11 +39,19 @@ async def lifespan(app: FastAPI):
 
     if not settings.chat_api_key:
         logger.warning(
-            "LAOZHANG_API_KEY is not set. Director/VLM/GPT Image features will be unavailable."
+            "LAOZHANG_API_KEY is not set. Director/VLM and optional GPT Image repairs will be unavailable."
         )
     if not settings.nano_banana_api_key:
         logger.warning(
             "LAOZHANG_NANO_API_KEY is not set. Nano Banana image generation will be unavailable."
+        )
+    if not settings.enable_gpt_image_repairs:
+        logger.info(
+            "GPT Image repairs are disabled. Emotional fixes will stay on the Nano Banana pipeline."
+        )
+    if settings.allow_degraded_delivery_on_vlm_unavailable:
+        logger.info(
+            "VLM unavailable fallback is enabled. Generate tasks will degrade to deliverable output when inspection is down."
         )
 
     # 启动后台清理任务

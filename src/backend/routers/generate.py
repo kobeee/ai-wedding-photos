@@ -17,7 +17,10 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 
 from config import settings
 from context.briefs import get_brief
-from context.prompt_assembler import assemble_generation_prompt
+from context.prompt_assembler import (
+    assemble_generation_prompt,
+    assemble_nano_repair_prompt,
+)
 from context.reference_selector import select_references
 from context.slot_renderer import render_slots
 from context.thresholds import decide_repair, meets_delivery_floor, RepairMode
@@ -29,7 +32,6 @@ from models.schemas import (
     TaskStatusEnum,
     PackageInfo,
     PackageCategory,
-    IssueCategory,
 )
 from services.director import director_service
 from services.nano_banana import nano_banana_service
@@ -100,49 +102,68 @@ async def _dual_path_fix(
     refs: list[tuple[bytes, str]],
     user_id: str,
 ) -> bytes:
-    """双路径修复（Phase 1 暂不改动，Phase 2 接入 repair_mode 分流）。"""
+    """修复流程：默认统一走 Nano，保留 GPT 接口作为受控预留能力。"""
     physical = report.physical_issues
     emotional = report.emotional_issues
 
     result = img_bytes
 
-    if physical:
-        phys_desc = "; ".join(report.repair_hints or [i.description for i in physical])
-        fix_prompt = (
-            f"Fix these physical issues in the wedding photo: {phys_desc}. "
-            f"Preserve the original composition, facial identity, and style. "
-            f"Ensure correct anatomy, no artifacts, consistent lighting."
+    def _select_hints(issues) -> list[str]:
+        if not report.repair_hints:
+            return [issue.description for issue in issues]
+        if physical and emotional:
+            return [issue.description for issue in issues]
+        return list(report.repair_hints)
+
+    async def _apply_nano_fix(issues, focus: str) -> bytes:
+        fix_prompt = assemble_nano_repair_prompt(
+            render_prompt=render_prompt,
+            repair_hints=_select_hints(issues),
+            has_identity_refs=bool(refs),
+            focus=focus,
         )
+        return await nano_banana_service.repair_with_references(
+            prompt=fix_prompt,
+            image_data=result,
+            reference_images=refs,
+        )
+
+    if physical:
         try:
-            result = await nano_banana_service.image_to_image(
-                prompt=fix_prompt,
-                image_data=result,
-            )
+            result = await _apply_nano_fix(physical, "physical")
             logger.info("Physical fix applied for user %s", user_id)
         except Exception:
             logger.warning("Physical fix via Nano failed for user %s", user_id)
 
     if emotional:
-        emo_desc = "; ".join(report.repair_hints or [i.description for i in emotional])
-        fix_prompt = (
-            f"Improve the emotional quality: {emo_desc}. "
-            f"Make expressions more natural and warm. "
-            f"Preserve the facial identity, scene, lighting, and wardrobe."
-        )
-        try:
-            _, tmp_path = await save_generated_image(user_id, result, ext=".png")
-            edit_url = await gpt_image_service.edit(
-                image_path=tmp_path,
-                prompt=fix_prompt,
+        if settings.enable_gpt_image_repairs:
+            fix_prompt = assemble_nano_repair_prompt(
+                render_prompt=render_prompt,
+                repair_hints=_select_hints(emotional),
+                has_identity_refs=bool(refs),
+                focus="emotional",
             )
-            import httpx as _httpx
-            async with _httpx.AsyncClient(timeout=60) as client:
-                resp = await client.get(edit_url)
-                resp.raise_for_status()
-                result = resp.content
-            logger.info("Emotional fix applied for user %s", user_id)
+            try:
+                _, tmp_path = await save_generated_image(user_id, result, ext=".png")
+                edit_url = await gpt_image_service.edit(
+                    image_path=tmp_path,
+                    prompt=fix_prompt,
+                )
+                import httpx as _httpx
+                async with _httpx.AsyncClient(timeout=60) as client:
+                    resp = await client.get(edit_url)
+                    resp.raise_for_status()
+                    result = resp.content
+                logger.info("Emotional fix applied via GPT for user %s", user_id)
+                return result
+            except Exception:
+                logger.warning("Emotional fix via GPT failed for user %s; falling back to Nano", user_id)
+
+        try:
+            result = await _apply_nano_fix(emotional, "emotional")
+            logger.info("Emotional fix applied via Nano for user %s", user_id)
         except Exception:
-            logger.warning("Emotional fix via GPT failed for user %s", user_id)
+            logger.warning("Emotional fix via Nano failed for user %s", user_id)
 
     return result
 
@@ -206,6 +227,7 @@ async def _generation_pipeline(task_id: str, req: GenerateRequest) -> None:
         result_urls: list[str] = []
         total_score = 0.0
         rejected_photos = 0
+        degraded_photos = 0
 
         for i, variant in enumerate(variants):
             step_base = 12 + i * (88 // photos_per_package)
@@ -264,9 +286,17 @@ async def _generation_pipeline(task_id: str, req: GenerateRequest) -> None:
                 photo_score = report.score
 
                 if report.inspection_unavailable:
-                    raise RuntimeError(
-                        "质量检查服务暂不可用，已停止交付以避免输出未审图像",
+                    if not settings.allow_degraded_delivery_on_vlm_unavailable:
+                        raise RuntimeError(
+                            "质量检查服务暂不可用，已停止交付以避免输出未审图像",
+                        )
+                    photo_score = settings.quality_acceptable
+                    degraded_photos += 1
+                    logger.warning(
+                        "Photo %d delivered via degraded path because quality check is unavailable",
+                        i + 1,
                     )
+                    break
 
                 logger.info(
                     "Photo %d round %d: score=%.2f, hard_fail=%s, "
@@ -360,9 +390,19 @@ async def _generation_pipeline(task_id: str, req: GenerateRequest) -> None:
         task.progress = 100
         task.status = TaskStatusEnum.completed
         task.quality_score = total_score / max(len(result_urls), 1)
-        if rejected_photos:
+        if rejected_photos and degraded_photos:
             task.message = (
                 f"生成完成，共交付 {len(result_urls)} 张，拦截 {rejected_photos} 张，"
+                f"质检降级 {degraded_photos} 张，综合评分 {task.quality_score:.2f}"
+            )
+        elif rejected_photos:
+            task.message = (
+                f"生成完成，共交付 {len(result_urls)} 张，拦截 {rejected_photos} 张，"
+                f"综合评分 {task.quality_score:.2f}"
+            )
+        elif degraded_photos:
+            task.message = (
+                f"生成完成，共 {len(result_urls)} 张，质检降级 {degraded_photos} 张，"
                 f"综合评分 {task.quality_score:.2f}"
             )
         else:

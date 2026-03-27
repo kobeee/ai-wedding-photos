@@ -113,6 +113,7 @@ async def wedding_photographer(
     # ---- Step 3: VLM 质检 + 修复循环 ----
     yield {"thought": "正在进行质量检测..."}
     try:
+        from context.prompt_assembler import assemble_nano_repair_prompt
         from services.vlm_checker import vlm_checker_service
 
         for round_num in range(3):
@@ -130,10 +131,18 @@ async def wedding_photographer(
                 yield {
                     "thought": f"第 {round_num + 1} 轮修复中..."
                 }
+                repair_hints = report.repair_hints or report.issue_descriptions
+                focus = "emotional" if report.emotional_issues else "physical"
                 img_bytes = (
-                    await nano_banana_service.image_to_image(
-                        prompt=fix_prompt,
+                    await nano_banana_service.repair_with_references(
+                        prompt=assemble_nano_repair_prompt(
+                            render_prompt=render_prompt,
+                            repair_hints=repair_hints,
+                            has_identity_refs=bool(image_parts),
+                            focus=focus,
+                        ),
                         image_data=img_bytes,
+                        reference_images=[(ref_data, "image/jpeg")] if image_parts and ref_data else [],
                     )
                 )
     except Exception as e:

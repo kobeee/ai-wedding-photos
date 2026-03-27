@@ -49,17 +49,25 @@ class NanoBananaService:
             raise ValueError("API response does not contain image data") from exc
         raise ValueError("No image data found in API response")
 
-    async def text_to_image(
-        self,
-        prompt: str,
-        aspect_ratio: str = "3:4",
-        size: str = "4K",
-    ) -> bytes:
-        """文生图 - 仅靠文字 prompt 生成图片，返回图片 bytes。"""
-        self._check_api_key()
+    @staticmethod
+    def _inline_image_part(image_data: bytes, mime_type: str) -> dict:
+        return {
+            "inline_data": {
+                "mime_type": mime_type,
+                "data": base64.b64encode(image_data).decode(),
+            }
+        }
 
+    async def _generate_from_parts(
+        self,
+        parts: list[dict],
+        *,
+        aspect_ratio: str,
+        size: str,
+        timeout: int = 120,
+    ) -> bytes:
         payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
+            "contents": [{"parts": parts}],
             "generationConfig": {
                 "responseModalities": ["IMAGE"],
                 "imageConfig": {
@@ -69,12 +77,26 @@ class NanoBananaService:
             },
         }
 
-        async with httpx.AsyncClient(timeout=120) as client:
+        async with httpx.AsyncClient(timeout=timeout) as client:
             resp = await client.post(
                 self.api_url, headers=self._headers(), json=payload
             )
             resp.raise_for_status()
             return self._extract_image_bytes(resp.json())
+
+    async def text_to_image(
+        self,
+        prompt: str,
+        aspect_ratio: str = "3:4",
+        size: str = "4K",
+    ) -> bytes:
+        """文生图 - 仅靠文字 prompt 生成图片，返回图片 bytes。"""
+        self._check_api_key()
+        return await self._generate_from_parts(
+            [{"text": prompt}],
+            aspect_ratio=aspect_ratio,
+            size=size,
+        )
 
     async def image_to_image(
         self,
@@ -86,37 +108,11 @@ class NanoBananaService:
     ) -> bytes:
         """图生图 - 传入原图 bytes 和 prompt，返回生成图片 bytes。"""
         self._check_api_key()
-
-        b64_image = base64.b64encode(image_data).decode()
-        payload = {
-            "contents": [
-                {
-                    "parts": [
-                        {"text": prompt},
-                        {
-                            "inline_data": {
-                                "mime_type": mime_type,
-                                "data": b64_image,
-                            }
-                        },
-                    ]
-                }
-            ],
-            "generationConfig": {
-                "responseModalities": ["IMAGE"],
-                "imageConfig": {
-                    "aspectRatio": aspect_ratio,
-                    "imageSize": size,
-                },
-            },
-        }
-
-        async with httpx.AsyncClient(timeout=120) as client:
-            resp = await client.post(
-                self.api_url, headers=self._headers(), json=payload
-            )
-            resp.raise_for_status()
-            return self._extract_image_bytes(resp.json())
+        return await self._generate_from_parts(
+            [{"text": prompt}, self._inline_image_part(image_data, mime_type)],
+            aspect_ratio=aspect_ratio,
+            size=size,
+        )
 
     async def multi_reference_generate(
         self,
@@ -136,32 +132,44 @@ class NanoBananaService:
 
         parts: list[dict] = [{"text": prompt}]
         for img_data, mime in reference_images:
-            parts.append(
-                {
-                    "inline_data": {
-                        "mime_type": mime,
-                        "data": base64.b64encode(img_data).decode(),
-                    }
-                }
-            )
+            parts.append(self._inline_image_part(img_data, mime))
 
-        payload = {
-            "contents": [{"parts": parts}],
-            "generationConfig": {
-                "responseModalities": ["IMAGE"],
-                "imageConfig": {
-                    "aspectRatio": aspect_ratio,
-                    "imageSize": size,
-                },
-            },
-        }
+        return await self._generate_from_parts(
+            parts,
+            aspect_ratio=aspect_ratio,
+            size=size,
+            timeout=180,
+        )
 
-        async with httpx.AsyncClient(timeout=180) as client:
-            resp = await client.post(
-                self.api_url, headers=self._headers(), json=payload
-            )
-            resp.raise_for_status()
-            return self._extract_image_bytes(resp.json())
+    async def repair_with_references(
+        self,
+        prompt: str,
+        image_data: bytes,
+        reference_images: list[tuple[bytes, str]] | None = None,
+        mime_type: str = "image/jpeg",
+        aspect_ratio: str = "3:4",
+        size: str = "4K",
+    ) -> bytes:
+        """修复当前成片，并附带额外身份参考图提升稳定性。"""
+        self._check_api_key()
+
+        refs = reference_images or []
+        if len(refs) > 13:
+            raise ValueError("Maximum 13 extra reference images allowed for repair")
+
+        parts: list[dict] = [
+            {"text": prompt},
+            self._inline_image_part(image_data, mime_type),
+        ]
+        for img_data, ref_mime in refs:
+            parts.append(self._inline_image_part(img_data, ref_mime))
+
+        return await self._generate_from_parts(
+            parts,
+            aspect_ratio=aspect_ratio,
+            size=size,
+            timeout=180,
+        )
 
 
 nano_banana_service = NanoBananaService()

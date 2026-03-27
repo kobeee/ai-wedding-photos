@@ -15,10 +15,15 @@ class Settings(BaseSettings):
 
     # GPT Image
     gpt_image_model: str = "gpt-image-1.5"
+    enable_gpt_image_repairs: bool = False
 
     # Director / VLM (顶级语言与多模态模型)
     director_model: str = "gemini-3.1-pro-preview"
     vlm_model: str = "gemini-3.1-pro-preview"
+    vlm_timeout_seconds: int = 120
+    vlm_max_tokens: int = 2048
+    vlm_max_image_dimension: int = 1536
+    vlm_jpeg_quality: int = 85
 
     # Storage
     upload_dir: str = "./uploads"
@@ -37,6 +42,7 @@ class Settings(BaseSettings):
     quality_acceptable: float = 0.85  # 合格
     quality_fixable: float = 0.70     # 需修复
     # < 0.70 → 重新生成
+    allow_degraded_delivery_on_vlm_unavailable: bool = True
     photos_per_package: int = 4
     max_fix_rounds: int = 3
 

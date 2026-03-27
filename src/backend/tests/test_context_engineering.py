@@ -15,7 +15,10 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from context.briefs import get_brief
-from context.prompt_assembler import assemble_generation_prompt
+from context.prompt_assembler import (
+    assemble_generation_prompt,
+    assemble_nano_repair_prompt,
+)
 from context.reference_selector import select_references
 from context.slot_renderer import render_slots
 from context.thresholds import RepairMode, decide_repair, meets_delivery_floor
@@ -126,6 +129,50 @@ class ContextEngineeringTests(unittest.TestCase):
         self.assertFalse(report.passed)
         self.assertTrue(report.inspection_unavailable)
         self.assertEqual(report.score, 0.0)
+
+    def test_vlm_prepare_image_for_request_downsizes_and_converts_to_jpeg(self) -> None:
+        image = Image.new("RGBA", (2400, 3200), (255, 240, 230, 180))
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+
+        prepared, mime_type, original_size, prepared_size = (
+            VLMCheckerService._prepare_image_for_request(
+                buffer.getvalue(),
+                "image/png",
+            )
+        )
+
+        self.assertEqual(mime_type, "image/jpeg")
+        self.assertEqual(original_size, (2400, 3200))
+        self.assertIsNotNone(prepared_size)
+        assert prepared_size is not None
+        self.assertLessEqual(max(prepared_size), 1536)
+        self.assertGreater(len(prepared), 0)
+
+    def test_nano_repair_prompt_preserves_identity_and_refs(self) -> None:
+        prompt = assemble_nano_repair_prompt(
+            render_prompt="A romantic Iceland wedding portrait at sunset.",
+            repair_hints=["Soften the bride's expression", "Keep the groom gaze natural"],
+            has_identity_refs=True,
+            focus="emotional",
+        )
+
+        self.assertIn("current render that needs repair", prompt)
+        self.assertIn("identity anchors only", prompt)
+        self.assertIn("Original creative intent to preserve", prompt)
+        self.assertIn("Improve facial expressions, gaze, and emotional warmth", prompt)
+
+    def test_nano_repair_prompt_without_refs_keeps_photographic_intent(self) -> None:
+        prompt = assemble_nano_repair_prompt(
+            render_prompt="Studio bridal portrait with soft gold rim light.",
+            repair_hints=["Correct the left hand anatomy"],
+            has_identity_refs=False,
+            focus="physical",
+        )
+
+        self.assertIn("input image is the current render", prompt)
+        self.assertIn("Repair anatomy", prompt)
+        self.assertIn("Do not add new props", prompt)
 
     def test_director_compatibility_api_returns_prompt(self) -> None:
         schema, prompt = asyncio.run(

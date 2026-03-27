@@ -11,9 +11,12 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import time
 from dataclasses import dataclass, field
+from io import BytesIO
 
 import httpx
+from PIL import Image
 
 from config import settings
 from models.schemas import IssueCategory, QualityIssue
@@ -117,6 +120,44 @@ class VLMCheckerService:
         if not settings.chat_api_key:
             raise RuntimeError("chat api key is not configured. Set LAOZHANG_API_KEY.")
 
+    @staticmethod
+    def _prepare_image_for_request(
+        image_data: bytes,
+        mime_type: str,
+    ) -> tuple[bytes, str, tuple[int, int] | None, tuple[int, int] | None]:
+        """压缩并缩放质检图，减少 VLM payload 和尾延迟。"""
+        try:
+            with Image.open(BytesIO(image_data)) as image:
+                original_size = image.size
+                image.load()
+
+                if image.mode in ("RGBA", "LA") or (
+                    image.mode == "P" and "transparency" in image.info
+                ):
+                    base = Image.new("RGB", image.size, (255, 255, 255))
+                    alpha = image.convert("RGBA")
+                    base.paste(alpha, mask=alpha.getchannel("A"))
+                    image = base
+                elif image.mode != "RGB":
+                    image = image.convert("RGB")
+
+                max_dim = max(settings.vlm_max_image_dimension, 512)
+                if image.width > max_dim or image.height > max_dim:
+                    image.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+
+                prepared_size = image.size
+                buffer = BytesIO()
+                image.save(
+                    buffer,
+                    format="JPEG",
+                    quality=settings.vlm_jpeg_quality,
+                    optimize=True,
+                )
+                return buffer.getvalue(), "image/jpeg", original_size, prepared_size
+        except Exception:
+            logger.warning("Failed to preprocess image for VLM; using original payload", exc_info=True)
+            return image_data, mime_type, None, None
+
     async def check_image(
         self,
         image_data: bytes,
@@ -129,8 +170,20 @@ class VLMCheckerService:
         if not self._channel_available:
             return self._fallback_report("Quality check model channel unavailable")
 
-        b64_image = base64.b64encode(image_data).decode()
-        data_uri = f"data:{mime_type};base64,{b64_image}"
+        prepared_image_data, prepared_mime_type, original_size, prepared_size = (
+            self._prepare_image_for_request(image_data, mime_type)
+        )
+        if original_size and prepared_size:
+            logger.info(
+                "VLM image prepared: %s bytes %s -> %s bytes %s",
+                len(image_data),
+                original_size,
+                len(prepared_image_data),
+                prepared_size,
+            )
+
+        b64_image = base64.b64encode(prepared_image_data).decode()
+        data_uri = f"data:{prepared_mime_type};base64,{b64_image}"
 
         # 用户消息：图片 + 创意意图（如果有）
         user_parts: list[dict] = [
@@ -147,17 +200,24 @@ class VLMCheckerService:
                 {"role": "system", "content": _CHECKER_SYSTEM_PROMPT},
                 {"role": "user", "content": user_parts},
             ],
-            "max_tokens": 1024,
+            "response_format": {"type": "json_object"},
+            "max_tokens": settings.vlm_max_tokens,
             "temperature": 0.1,
         }
 
         try:
-            async with httpx.AsyncClient(timeout=60) as client:
+            started_at = time.perf_counter()
+            async with httpx.AsyncClient(timeout=httpx.Timeout(settings.vlm_timeout_seconds)) as client:
                 resp = await client.post(
                     self.api_url, headers=self._headers(), json=payload,
                 )
                 resp.raise_for_status()
                 data = resp.json()
+            logger.info(
+                "VLM quality check succeeded in %.1fs for model %s",
+                time.perf_counter() - started_at,
+                self.model,
+            )
 
             content = data["choices"][0]["message"]["content"]
             return self._parse_report(content)
@@ -165,6 +225,13 @@ class VLMCheckerService:
         except httpx.HTTPStatusError as exc:
             self._maybe_disable_channel(exc.response)
             logger.exception("VLM quality check failed")
+            return self._fallback_report("Quality check service unavailable")
+        except httpx.TimeoutException:
+            logger.exception(
+                "VLM quality check timed out after %ss for model %s",
+                settings.vlm_timeout_seconds,
+                self.model,
+            )
             return self._fallback_report("Quality check service unavailable")
         except Exception:
             logger.exception("VLM quality check failed")
@@ -188,6 +255,12 @@ class VLMCheckerService:
                 if inside:
                     json_lines.append(line)
             content = "\n".join(json_lines)
+
+        if not content.startswith("{"):
+            start = content.find("{")
+            end = content.rfind("}")
+            if start != -1 and end != -1 and end > start:
+                content = content[start:end + 1]
 
         try:
             result = json.loads(content)

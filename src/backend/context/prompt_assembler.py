@@ -27,6 +27,13 @@ SYSTEM_IDENTITY_PHOTOGRAPHER = (
     "indistinguishable from high-end editorial wedding photography."
 )
 
+SYSTEM_IDENTITY_RETOUCHER = (
+    "You are an elite wedding photo retoucher improving an already-generated "
+    "editorial wedding image. Make the smallest necessary change to solve the "
+    "detected problems while preserving the couple's exact identity, the "
+    "composition, wardrobe, scene design, lighting, and premium photographic realism."
+)
+
 # ---------------------------------------------------------------------------
 # Layer 3: Identity Anchor（参考图定位文本）
 # ---------------------------------------------------------------------------
@@ -141,5 +148,57 @@ def assemble_generation_prompt(
     all_avoids = list(brief.avoid_global) + list(variant.avoid_local)
     if all_avoids:
         sections.append("Avoid: " + ", ".join(all_avoids) + ".")
+
+    return "\n\n".join(sections)
+
+
+def assemble_nano_repair_prompt(
+    render_prompt: str,
+    repair_hints: list[str],
+    *,
+    has_identity_refs: bool,
+    focus: str = "general",
+) -> str:
+    """组装交给 Nano Banana 的修复 prompt。"""
+    sections: list[str] = [SYSTEM_IDENTITY_RETOUCHER]
+
+    if has_identity_refs:
+        sections.append(
+            "The first image is the current render that needs repair. Any additional "
+            "images are identity anchors only. Keep the people recognizable and treat "
+            "the current render as the composition and styling source of truth."
+        )
+    else:
+        sections.append(
+            "The input image is the current render that needs repair. Preserve its "
+            "composition, styling, lighting, and overall photographic intent."
+        )
+
+    if render_prompt:
+        sections.append(f"Original creative intent to preserve:\n{render_prompt}")
+
+    focus_instructions = {
+        "physical": (
+            "Repair anatomy, facial structure, garment edges, object boundaries, and "
+            "lighting continuity. Remove artifacts without redesigning the shot."
+        ),
+        "emotional": (
+            "Improve facial expressions, gaze, and emotional warmth. Keep the change "
+            "subtle, believable, and premium editorial rather than exaggerated."
+        ),
+        "general": (
+            "Repair the detected flaws while preserving the original photographic look."
+        ),
+    }
+    sections.append(f"Repair focus: {focus_instructions.get(focus, focus_instructions['general'])}")
+
+    if repair_hints:
+        sections.append("Required fixes:\n- " + "\n- ".join(repair_hints))
+
+    sections.append(
+        "Preserve exactly: facial identity, pose intent, framing, lens feel, wardrobe, "
+        "background design, skin texture, and color grade. Do not add new props, do not "
+        "change the outfit, and do not turn this into a different photo."
+    )
 
     return "\n\n".join(sections)
