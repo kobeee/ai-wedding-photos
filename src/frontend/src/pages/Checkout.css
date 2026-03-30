@@ -1,0 +1,219 @@
+.checkout-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(201, 169, 110, 0.14), transparent 28%),
+    linear-gradient(180deg, #0c0b0a 0%, #0a0a0a 100%);
+}
+
+.checkout-main {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 40px 32px 72px;
+}
+
+.checkout-hero {
+  margin-bottom: 32px;
+}
+
+.checkout-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-gold);
+  color: var(--accent-gold-light);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.checkout-hero h1 {
+  margin-top: 18px;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.05;
+}
+
+.checkout-hero p {
+  margin-top: 14px;
+  max-width: 720px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.checkout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) 360px;
+  gap: 24px;
+  align-items: start;
+}
+
+.checkout-cards {
+  display: grid;
+  gap: 18px;
+}
+
+.checkout-card {
+  text-align: left;
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(30, 28, 26, 0.88);
+  border: 1px solid var(--border-subtle);
+  transition: border-color 0.2s, transform 0.2s, background 0.2s;
+}
+
+.checkout-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(201, 169, 110, 0.28);
+}
+
+.checkout-card--active {
+  border-color: var(--accent-gold);
+  background: linear-gradient(135deg, rgba(201, 169, 110, 0.14), rgba(30, 28, 26, 0.95));
+}
+
+.checkout-card--highlight {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24);
+}
+
+.checkout-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.checkout-card__tag {
+  color: var(--accent-gold-light);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.checkout-card h2 {
+  margin-top: 8px;
+  font-size: 1.5rem;
+}
+
+.checkout-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(201, 169, 110, 0.14);
+  color: var(--accent-gold-light);
+  font-size: 13px;
+}
+
+.checkout-card__price {
+  margin-top: 18px;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.checkout-card__desc {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.checkout-card__features {
+  margin-top: 18px;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  color: var(--text-primary);
+}
+
+.checkout-card__features li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkout-summary {
+  position: sticky;
+  top: 24px;
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(20, 18, 16, 0.92);
+}
+
+.checkout-summary__label {
+  color: var(--text-muted);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.checkout-summary h3 {
+  margin-top: 10px;
+  font-size: 1.5rem;
+}
+
+.checkout-summary p {
+  margin-top: 8px;
+  color: var(--text-secondary);
+}
+
+.checkout-summary__section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--text-secondary);
+}
+
+.checkout-summary__section strong {
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.checkout-loading,
+.checkout-error {
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: rgba(196, 112, 112, 0.12);
+  border: 1px solid rgba(196, 112, 112, 0.26);
+  color: #f3caca;
+}
+
+.checkout-error {
+  margin: 18px 0;
+}
+
+.checkout-page .btn--outline-light {
+  margin-top: 12px;
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.btn--full {
+  width: 100%;
+}
+
+@media (max-width: 960px) {
+  .checkout-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-summary {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .checkout-main {
+    padding: 24px 18px 56px;
+  }
+
+  .checkout-card,
+  .checkout-summary {
+    padding: 20px;
+    border-radius: 20px;
+  }
+}

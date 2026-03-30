@@ -5,10 +5,9 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from config import settings
-from routers import health, upload, makeup, generate
+from routers import files, generate, health, makeup, orders, payments, upload
 from models.database import get_db, close_db
 from middleware.auth import SessionAuthMiddleware
 from utils.storage import ensure_dirs, periodic_cleanup
@@ -95,20 +94,6 @@ app.include_router(health.router)
 app.include_router(upload.router)
 app.include_router(makeup.router)
 app.include_router(generate.router)
-
-# ---- Static file serving ----
-uploads_path = Path(settings.upload_dir)
-outputs_path = Path(settings.output_dir)
-uploads_path.mkdir(parents=True, exist_ok=True)
-outputs_path.mkdir(parents=True, exist_ok=True)
-
-app.mount(
-    "/api/files/uploads",
-    StaticFiles(directory=str(uploads_path)),
-    name="uploads",
-)
-app.mount(
-    "/api/files/outputs",
-    StaticFiles(directory=str(outputs_path)),
-    name="outputs",
-)
+app.include_router(orders.router)
+app.include_router(payments.router)
+app.include_router(files.router)

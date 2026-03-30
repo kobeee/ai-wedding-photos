@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     # Nano Banana Pro
     nano_banana_model: str = "gemini-3-pro-image-preview"
+    nano_timeout_seconds: int = 300
+    nano_image_size: str = "1K"
 
     # GPT Image
     gpt_image_model: str = "gpt-image-1.5"
@@ -30,9 +32,13 @@ class Settings(BaseSettings):
     output_dir: str = "./outputs"
     db_path: str = "./data/lumiere.db"
     max_upload_size: int = 10 * 1024 * 1024  # 10MB
+    delivery_long_edge: int = 4096
 
     # Security
     data_retention_hours: int = 24
+    session_cookie_name: str = "lumiere_session"
+    session_cookie_secure: bool = False
+    session_ttl_hours: int = 24 * 7
 
     # ACP Server
     acp_port: int = 8001

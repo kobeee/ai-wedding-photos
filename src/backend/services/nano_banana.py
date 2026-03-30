@@ -35,6 +35,31 @@ class NanoBananaService:
                 "Set LAOZHANG_NANO_API_KEY or LAOZHANG_API_KEY."
             )
 
+    @staticmethod
+    def _normalize_size(size: str) -> str:
+        raw = str(size or "").strip()
+        normalized = raw.upper()
+
+        aliases = {
+            "256": "1K",
+            "512": "1K",
+            "1024": "1K",
+            "1K": "1K",
+            "2048": "2K",
+            "2K": "2K",
+            "4096": "4K",
+            "4K": "4K",
+        }
+
+        resolved = aliases.get(normalized)
+        if resolved:
+            if normalized != resolved:
+                logger.info("Normalized Nano Banana image size '%s' -> '%s'", raw, resolved)
+            return resolved
+
+        logger.warning("Unsupported Nano Banana image size '%s', falling back to 1K", raw)
+        return "1K"
+
     def _extract_image_bytes(self, data: dict) -> bytes:
         """从 API 响应中提取图片 bytes。"""
         try:
@@ -64,23 +89,34 @@ class NanoBananaService:
         *,
         aspect_ratio: str,
         size: str,
-        timeout: int = 120,
+        timeout: int | None = None,
     ) -> bytes:
+        resolved_size = self._normalize_size(size or settings.nano_image_size)
+        resolved_timeout = timeout or settings.nano_timeout_seconds
         payload = {
             "contents": [{"parts": parts}],
             "generationConfig": {
                 "responseModalities": ["IMAGE"],
                 "imageConfig": {
                     "aspectRatio": aspect_ratio,
-                    "imageSize": size,
+                    "imageSize": resolved_size,
                 },
             },
         }
 
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with httpx.AsyncClient(timeout=resolved_timeout) as client:
             resp = await client.post(
                 self.api_url, headers=self._headers(), json=payload
             )
+            if resp.status_code >= 400:
+                logger.warning(
+                    "Nano Banana request failed: status=%s size=%s timeout=%ss parts=%d body=%s",
+                    resp.status_code,
+                    resolved_size,
+                    resolved_timeout,
+                    len(parts),
+                    resp.text[:500],
+                )
             resp.raise_for_status()
             return self._extract_image_bytes(resp.json())
 
@@ -88,7 +124,7 @@ class NanoBananaService:
         self,
         prompt: str,
         aspect_ratio: str = "3:4",
-        size: str = "4K",
+        size: str = settings.nano_image_size,
     ) -> bytes:
         """文生图 - 仅靠文字 prompt 生成图片，返回图片 bytes。"""
         self._check_api_key()
@@ -104,7 +140,7 @@ class NanoBananaService:
         image_data: bytes,
         mime_type: str = "image/jpeg",
         aspect_ratio: str = "3:4",
-        size: str = "4K",
+        size: str = settings.nano_image_size,
     ) -> bytes:
         """图生图 - 传入原图 bytes 和 prompt，返回生成图片 bytes。"""
         self._check_api_key()
@@ -112,6 +148,7 @@ class NanoBananaService:
             [{"text": prompt}, self._inline_image_part(image_data, mime_type)],
             aspect_ratio=aspect_ratio,
             size=size,
+            timeout=settings.nano_timeout_seconds,
         )
 
     async def multi_reference_generate(
@@ -119,7 +156,7 @@ class NanoBananaService:
         prompt: str,
         reference_images: list[tuple[bytes, str]],
         aspect_ratio: str = "3:4",
-        size: str = "4K",
+        size: str = settings.nano_image_size,
     ) -> bytes:
         """
         多图参考生成 - 最多 14 张参考图。
@@ -138,7 +175,7 @@ class NanoBananaService:
             parts,
             aspect_ratio=aspect_ratio,
             size=size,
-            timeout=180,
+            timeout=settings.nano_timeout_seconds,
         )
 
     async def repair_with_references(
@@ -148,7 +185,7 @@ class NanoBananaService:
         reference_images: list[tuple[bytes, str]] | None = None,
         mime_type: str = "image/jpeg",
         aspect_ratio: str = "3:4",
-        size: str = "4K",
+        size: str = settings.nano_image_size,
     ) -> bytes:
         """修复当前成片，并附带额外身份参考图提升稳定性。"""
         self._check_api_key()
@@ -168,7 +205,7 @@ class NanoBananaService:
             parts,
             aspect_ratio=aspect_ratio,
             size=size,
-            timeout=180,
+            timeout=settings.nano_timeout_seconds,
         )
 
 

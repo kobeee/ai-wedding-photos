@@ -34,6 +34,12 @@ SYSTEM_IDENTITY_RETOUCHER = (
     "composition, wardrobe, scene design, lighting, and premium photographic realism."
 )
 
+COUPLE_BODY_PROPORTION_ANCHOR = (
+    "The first reference image is a full-body couple photo. When both people are "
+    "visible, preserve the relative height difference and overall build shown there, "
+    "while keeping the final composition natural and photographic."
+)
+
 # ---------------------------------------------------------------------------
 # Layer 3: Identity Anchor（参考图定位文本）
 # ---------------------------------------------------------------------------
@@ -83,6 +89,7 @@ def assemble_generation_prompt(
     slots: SlotPayload,
     has_refs: bool = True,
     has_couple_refs: bool = False,
+    has_couple_anchor: bool = False,
 ) -> str:
     """组装最终传给 Nano Banana Pro 的生图 prompt。
 
@@ -95,6 +102,9 @@ def assemble_generation_prompt(
 
     # Layer 3: Identity Anchor
     sections.append(_identity_anchor(has_refs, slots.pairing, has_couple_refs))
+
+    if has_couple_anchor and slots.pairing == "a bride and groom":
+        sections.append(COUPLE_BODY_PROPORTION_ANCHOR)
 
     # Layer 2: Creative Brief 主体
     sections.append(

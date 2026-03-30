@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -25,6 +25,61 @@ class TaskStatusEnum(str, Enum):
     quality_check = "quality_check"
     completed = "completed"
     failed = "failed"
+
+
+class PaymentStatus(str, Enum):
+    unpaid = "unpaid"
+    pending = "pending"
+    paid = "paid"
+    free_granted = "free_granted"
+    failed = "failed"
+    refunded = "refunded"
+    expired = "expired"
+
+
+class FulfillmentStatus(str, Enum):
+    not_started = "not_started"
+    queued = "queued"
+    processing = "processing"
+    delivered = "delivered"
+    partially_delivered = "partially_delivered"
+    failed = "failed"
+
+
+class ServiceStatus(str, Enum):
+    normal = "normal"
+    aftersale = "aftersale"
+    closed = "closed"
+
+
+class BatchStatus(str, Enum):
+    pending = "pending"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
+
+
+class BatchType(str, Enum):
+    preview = "preview"
+    initial = "initial"
+    rerun = "rerun"
+    manual_retouch = "manual_retouch"
+
+
+class InitiatedBy(str, Enum):
+    system = "system"
+    user = "user"
+    support = "support"
+
+
+class PaymentProvider(str, Enum):
+    mock = "mock"
+    alipay = "alipay"
+
+
+class DeliveryTier(str, Enum):
+    preview = "preview"
+    four_k = "4k"
 
 
 class PackageCategory(str, Enum):
@@ -72,7 +127,7 @@ class FileInfo(BaseModel):
 
 class UploadResponse(BaseModel):
     user_id: str
-    session_token: str
+    session_token: str = ""
     files: list[FileInfo]
 
 
@@ -124,7 +179,144 @@ class PackageInfo(BaseModel):
     preview_url: str = ""
 
 
+# ---- Commerce ----
+
+class EntitlementSnapshot(BaseModel):
+    promised_photos: int = Field(..., ge=1)
+    scene_count: int = Field(..., ge=1)
+    photo_mix: dict[str, int] = Field(default_factory=dict)
+    rerun_quota: int = Field(0, ge=0)
+    repaint_quota: int = Field(0, ge=0)
+    retention_days: int = Field(1, ge=1)
+    delivery_specs: list[str] = Field(default_factory=list)
+    preview_policy: str = "trial"
+
+
+class SkuInfo(BaseModel):
+    sku_id: str
+    name: str
+    description: str = ""
+    tag: str = ""
+    price: int = Field(..., ge=0, description="价格，单位分")
+    currency: str = "CNY"
+    active: bool = True
+    highlight: bool = False
+    entitlements: EntitlementSnapshot
+
+
+class OrderCreateRequest(BaseModel):
+    package_id: str = Field(..., description="视觉主题")
+    sku_id: str = Field(..., description="销售 SKU")
+
+
+class GenerationBatchInfo(BaseModel):
+    batch_id: str
+    order_id: str
+    batch_type: BatchType
+    initiated_by: InitiatedBy
+    status: BatchStatus
+    requested_photos: int = 0
+    delivered_photos: int = 0
+    progress: int = 0
+    message: str = ""
+    quality_score: float = 0.0
+    failure_reason: str = ""
+    started_at: str | None = None
+    completed_at: str | None = None
+    created_at: str
+    updated_at: str
+
+
+class DeliverableInfo(BaseModel):
+    deliverable_id: str
+    order_id: str
+    batch_id: str
+    url: str
+    photo_status: str = "delivered"
+    quality_score: float = 0.0
+    delivery_tier: DeliveryTier = DeliveryTier.four_k
+    created_at: str
+
+
+class OrderInfo(BaseModel):
+    order_id: str
+    identity_id: str
+    sku_id: str
+    package_id: str
+    amount: int = 0
+    currency: str = "CNY"
+    payment_status: PaymentStatus
+    fulfillment_status: FulfillmentStatus
+    service_status: ServiceStatus
+    entitlement_snapshot: EntitlementSnapshot
+    rerun_used_count: int = 0
+    created_at: str
+    paid_at: str | None = None
+    expired_at: str | None = None
+    closed_at: str | None = None
+    latest_batch: GenerationBatchInfo | None = None
+    deliverable_count: int = 0
+    remaining_reruns: int = 0
+    package_name: str = ""
+    sku_name: str = ""
+
+
+class PaymentSessionResponse(BaseModel):
+    payment_id: str
+    order_id: str
+    provider: PaymentProvider
+    status: str
+    amount: int
+    currency: str = "CNY"
+    checkout_url: str = ""
+
+
+class PaymentConfirmResponse(BaseModel):
+    payment_id: str
+    order_id: str
+    payment_status: PaymentStatus
+    paid_at: str | None = None
+
+
+class StartOrderResponse(BaseModel):
+    order_id: str
+    batch_id: str
+    fulfillment_status: FulfillmentStatus
+
+
+class StartOrderRequest(BaseModel):
+    makeup_style: Optional[MakeupStyle] = None
+    gender: Optional[Gender] = None
+    groom_style: Optional[str] = None
+    bride_style: Optional[str] = None
+
+
+class BatchListResponse(BaseModel):
+    items: list[GenerationBatchInfo]
+
+
+class DeliverableListResponse(BaseModel):
+    items: list[DeliverableInfo]
+
+
+class OrderListResponse(BaseModel):
+    items: list[OrderInfo]
+
+
+class MockPayCreateRequest(BaseModel):
+    order_id: str
+
+
+class MockPayConfirmRequest(BaseModel):
+    payment_id: str
+    succeed: bool = True
+
+
 # ---- Common ----
 
 class ErrorResponse(BaseModel):
     detail: str
+
+
+class JsonDictResponse(BaseModel):
+    payload: dict[str, Any]

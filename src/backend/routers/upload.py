@@ -3,11 +3,11 @@ from __future__ import annotations
 import uuid
 import logging
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request, Response
 
 from config import settings
 from models.schemas import FileInfo, UploadResponse
-from models.database import create_user, increment_photos_count
+from models.database import create_user, get_user_by_token, increment_photos_count
 from utils.storage import save_upload_file
 
 logger = logging.getLogger(__name__)
@@ -40,11 +40,12 @@ def _validate_file(file: UploadFile) -> None:
 
 @router.post("/api/upload", response_model=UploadResponse)
 async def upload_files(
+    request: Request,
+    response: Response,
     files: list[UploadFile] = File(..., description="上传的照片文件"),
-    user_id: str = Form(default="", description="用户ID，留空则自动生成"),
     roles: list[str] | None = Form(
         default=None,
-        description="可选：与 files 一一对应的角色标签，支持 bride/groom/unknown",
+        description="可选：与 files 一一对应的角色标签，支持 couple/bride/groom/unknown",
     ),
 ):
     """
@@ -61,11 +62,21 @@ async def upload_files(
             detail="roles length must match files length when provided",
         )
 
-    if not user_id:
-        user_id = uuid.uuid4().hex[:8]
+    session_token = request.cookies.get(settings.session_cookie_name, "")
+    user = await get_user_by_token(session_token) if session_token else None
+    if user:
+        user_id = str(user["user_id"])
+    else:
+        user_id, session_token = await create_user()
 
-    # 创建用户并获取 session token
-    user_id, session_token = await create_user(user_id)
+    response.set_cookie(
+        key=settings.session_cookie_name,
+        value=session_token,
+        httponly=True,
+        secure=settings.session_cookie_secure,
+        samesite="lax",
+        max_age=settings.session_ttl_hours * 3600,
+    )
 
     result_files: list[FileInfo] = []
 
@@ -86,10 +97,13 @@ async def upload_files(
         role = ""
         if roles:
             role = (roles[index] or "").strip().lower()
-            if role not in {"", "bride", "groom", "unknown"}:
+            if role not in {"", "couple", "bride", "groom", "unknown"}:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Unsupported role: '{role}'. Allowed: bride, groom, unknown",
+                    detail=(
+                        f"Unsupported role: '{role}'. "
+                        "Allowed: couple, bride, groom, unknown"
+                    ),
                 )
 
         # 保存文件

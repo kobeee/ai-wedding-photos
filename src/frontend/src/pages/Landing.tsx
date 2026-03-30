@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom'
 import { Sparkles, Check, ChevronDown } from 'lucide-react'
 import Header from '../components/Header'
+import { clearWorkflowState } from '../lib/workflow'
 import './Landing.css'
 
 const processSteps = [
   { num: '01', title: '上传日常照', desc: '男女双方各上传5张清晰日常照片，系统自动提取面部特征' },
   { num: '02', title: 'AI试妆间', desc: '三种妆造风格供你选择，找到最理想的自己' },
-  { num: '03', title: '选择视觉套餐', desc: '像刷小红书一样浏览精美套餐，点击即选，无需输入任何文字' },
-  { num: '04', title: 'AI拍摄中', desc: '沉浸式等待约30-60秒，AI正在为你布光、调色、抓拍' },
-  { num: '05', title: '审片与交付', desc: '大图震撼呈现，支持换装重拍，一键下载8K无损大图' },
+  { num: '03', title: '选主题 + 选 SKU', desc: '先定视觉故事，再确认本单承诺的张数、保留期和重拍额度' },
+  { num: '04', title: '支付并启动履约', desc: '订单支付成功后再进入生成，等待的是正式交付而不是试玩任务' },
+  { num: '05', title: '订单交付页', desc: '按订单查看已交付张数、下载 4K 成片，并继续发起重拍或售后' },
 ]
 
 const featuredPackages = [
@@ -32,29 +33,29 @@ const allPackages = [
 const plans = [
   {
     name: '免费体验', price: '¥0', period: '',
-    desc: '1张带水印标清图\n体验AI婚纱摄影的魔力',
-    features: ['1张标清带水印成片', '体验完整AI拍摄流程', '3种妆造风格试妆'],
+    desc: '3张体验样片\n先确认风格与质感',
+    features: ['3 张体验样片', '完整试妆与下单流程', '1 天结果保留期'],
     cta: '免费开始', primary: false,
   },
   {
-    name: '基础套餐', price: '¥99', period: '/ ¥199',
-    desc: '20张4K精修成片\n+ 2张8K海报级输出',
-    features: ['20张4K精修无水印成片', '2张8K海报级超清输出', '解锁指定主题套餐', 'AI试妆 + 魔法笔刷微调'],
+    name: '记忆典藏', price: '¥699', period: '',
+    desc: '5 景 / 40 张 4K\n当前唯一主推款',
+    features: ['40 张 4K 成片交付', '5 组场景叙事', '2 次重拍额度', '30 天结果保留期'],
     cta: '立即购买', primary: true, highlight: true,
   },
   {
-    name: 'SVIP 无限畅拍', price: '¥599', period: '/ 季度',
-    desc: '全站解锁 + 无限重绘\n极端场景全部畅享',
-    features: ['全站所有视觉套餐解锁', '无限次局部重绘修改', '星空/水下/特效等极端场景', '8K超清输出 + 实体冲印折扣'],
-    cta: '开通 SVIP', primary: true, badge: '最受欢迎',
+    name: '档案珍藏', price: '¥999', period: '',
+    desc: '7 景 / 56 张 4K\n完整档案级交付',
+    features: ['56 张 4K 成片交付', '7 组场景叙事', '3 次重拍额度', '适合完整婚礼档案'],
+    cta: '查看方案', primary: true, badge: '高阶',
   },
 ]
 
 const faqs = [
   { q: '生成的照片和真人像吗？', a: '我们采用Face-ID特征提取技术，确保生成的照片100%忠于您的五官特征。同时提供三档美化选择，您可以自由决定理想状态。' },
-  { q: '生成一套照片需要多长时间？', a: '单张照片生成约30-60秒。我们的AI管线会自动进行质检和修复，确保每一张都是精品，无需您反复挑选废片。' },
+  { q: '支付后多久能看到结果？', a: '订单支付成功后才会进入正式履约。系统会按批次生成与质检，体验单通常在几分钟内完成，正式套餐会根据承诺张数持续交付。' },
   { q: '我的照片数据安全吗？', a: '绝对安全。您上传的照片和生成的面部特征数据将在24小时内自动销毁，我们承诺不会用于任何其他用途。' },
-  { q: '可以用于实体冲印吗？', a: '当然可以。我们提供8K超分辨率输出，完全满足大幅面冲印需求。还可直接在平台一键下单相册、挂画、迎宾海报等实体产品。' },
+  { q: '可以用于实体冲印吗？', a: '当前首版对外交付口径统一为 4K 成片，已经足够覆盖大多数线上展示与常规冲印场景。更高规格与实体冲印会在后续版本继续补齐。' },
 ]
 
 export default function Landing() {
@@ -75,7 +76,7 @@ export default function Landing() {
             无需摆拍，无需修图，AI为你定制专属视觉记忆。
           </p>
           <div className="hero__buttons">
-            <Link to="/upload" className="btn btn--gold">免费体验一张</Link>
+            <Link to="/upload" className="btn btn--gold" onClick={clearWorkflowState}>免费体验一张</Link>
             <a href="#gallery" className="btn btn--outline">查看作品集</a>
           </div>
         </div>
@@ -180,7 +181,7 @@ export default function Landing() {
         <h2>准备好拥有你们的<br />专属数字婚纱大片了吗？</h2>
         <p>上传日常照，30秒后见证奇迹</p>
         <div className="final-cta__buttons">
-          <Link to="/upload" className="btn btn--gold btn--lg final-cta__primary">免费试拍</Link>
+          <Link to="/upload" className="btn btn--gold btn--lg final-cta__primary" onClick={clearWorkflowState}>免费试拍</Link>
           <a href="#faq" className="btn btn--outline btn--lg">了解更多</a>
         </div>
         <span className="final-cta__trust">无需注册  ·  免费体验  ·  24小时数据自动销毁</span>

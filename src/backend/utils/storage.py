@@ -6,11 +6,13 @@ import time
 import uuid
 import asyncio
 import logging
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import aiofiles
 
 from config import settings
+from models.database import list_deliverable_retention_records
 
 logger = logging.getLogger(__name__)
 
@@ -90,11 +92,37 @@ async def read_file_bytes(path: Path) -> bytes:
 
 async def cleanup_expired_files() -> int:
     """
-    清理超过 data_retention_hours 的文件。
+    清理过期文件：
+    - uploads 始终按 data_retention_hours 清理
+    - outputs 中已交付文件按订单 retention_days 清理
+    - 未绑定订单的 outputs 仍按 data_retention_hours 清理
     返回删除的文件数量。
     """
-    cutoff = time.time() - settings.data_retention_hours * 3600
+    upload_cutoff = time.time() - settings.data_retention_hours * 3600
     removed = 0
+    deliverable_expiry: dict[Path, float] = {}
+
+    for record in await list_deliverable_retention_records():
+        created_at_raw = str(record.get("created_at", "")).strip()
+        if not created_at_raw:
+            continue
+        try:
+            created_at = datetime.fromisoformat(created_at_raw.replace("Z", "+00:00"))
+        except ValueError:
+            try:
+                created_at = datetime.strptime(created_at_raw, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                logger.warning("Failed to parse deliverable timestamp: %s", created_at_raw)
+                continue
+
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=UTC)
+
+        expires_at = created_at + timedelta(days=max(int(record.get("retention_days", 1)), 1))
+        deliverable_path = (
+            Path(settings.output_dir) / str(record.get("owner_id", "")) / str(record.get("storage_path", ""))
+        ).resolve()
+        deliverable_expiry[deliverable_path] = expires_at.timestamp()
 
     for base_dir in (settings.upload_dir, settings.output_dir):
         base = Path(base_dir)
@@ -104,6 +132,8 @@ async def cleanup_expired_files() -> int:
             for fname in files:
                 fpath = Path(root) / fname
                 try:
+                    resolved = fpath.resolve()
+                    cutoff = deliverable_expiry.get(resolved, upload_cutoff)
                     if fpath.stat().st_mtime < cutoff:
                         fpath.unlink()
                         removed += 1

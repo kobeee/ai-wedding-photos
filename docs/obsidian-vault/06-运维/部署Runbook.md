@@ -30,6 +30,12 @@ related: [[VPS部署]], [[Docker配置]], [[Nginx配置]], [[VPS排障清单]], 
 - 确认页面资源引用统一使用 `/images/...`
 - 确认没有把 `node_modules/`、`.venv/`、`__pycache__/` 一起同步到 VPS
 
+> [!important]
+> 若本次任务目标包含“VPS 验证 / 线上验证 / 真实试跑 / 本人实拍联调”，则发布完成标准不是“代码已同步”或“本地 build 通过”，而是：
+> 1. 已部署到 `wedding-photos` 线上栈
+> 2. 已完成指定主链路的真实线上验证
+> 3. 已明确区分“本地通过”和“线上通过”
+
 ### AI 联调前准备
 
 - 运行时密钥文件：`/opt/apps/wedding-photos/.env.runtime`
@@ -126,6 +132,28 @@ curl -s https://wedding.escapemobius.cc/api/health
 curl -I -s https://wedding.escapemobius.cc/images/generated-1773678492426.png
 ```
 
+### 5. 若本次目标是真实试跑，必须补做业务链路验证
+
+至少跑通一条真实链路，不能只停在健康检查：
+
+```text
+upload -> makeup -> create order -> start order -> wait batch -> review/download
+```
+
+若支付本轮刻意跳过，则至少验证：
+
+```text
+upload -> makeup -> create trial_free order -> start order -> deliverable download
+```
+
+验收时必须记录：
+
+- 上传是否成功建立 session
+- 试妆是否返回完整结果
+- 订单是否成功进入 `processing`
+- 批次是否推进到 `completed / failed`
+- `deliverables` 是否真的能下载到文件
+
 ---
 
 ## 发布成功判定
@@ -158,6 +186,22 @@ curl -I -s https://wedding.escapemobius.cc/images/generated-1773678492426.png
 - 先执行 `docker ps`，确认是否同时存在 `wedding-photos-*` 和 `docker-*`
 - 确认本次执行的命令是否显式写了 `-p wedding-photos`
 - 详见 [[VPS排障清单#场景 1：代码已部署，但公网还是旧页面]]
+
+### 情况 1.1：误起了 `docker-*` 栈，旧 `wedding-photos-*` 仍在线
+
+- 表现：
+  - `backend` / `acp` 好像已经是新容器
+  - 但 `frontend` 因 `3080` 被占用而起不来
+  - 或公网仍命中旧前端
+- 处理：
+  1. `docker ps --format "table {{.Names}}\t{{.Ports}}\t{{.Status}}"`
+  2. 若看到同项目同时存在 `docker-*` 与 `wedding-photos-*`
+  3. 先执行：
+     - `docker compose -p docker -f docker/docker-compose.yml down`
+  4. 再执行：
+     - `docker compose -p wedding-photos -f docker/docker-compose.yml up -d --build frontend backend acp`
+- 结论：
+  - 这不是镜像问题，是 Compose project name 使用错误
 
 ### 情况 2：页面更新了，但插图不显示
 

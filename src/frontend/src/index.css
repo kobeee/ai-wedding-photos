@@ -78,6 +78,10 @@ button {
   background: var(--accent-gold-hover);
 }
 
+.btn--outline-light {
+  background: transparent;
+}
+
 img { max-width: 100%; display: block; }
 
 #root { min-height: 100vh; overflow-x: hidden; }

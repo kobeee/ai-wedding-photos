@@ -119,6 +119,10 @@
   height: 56px;
   border-radius: 8px;
   background: #2A2A2A center/cover no-repeat;
+  border: 1px solid transparent;
+  padding: 0;
+  appearance: none;
+  cursor: pointer;
 }
 
 .review-thumb--active {
@@ -153,6 +157,20 @@
 
 .review-magic__btns button:hover {
   border-color: var(--accent-gold);
+}
+
+.review-magic__btns button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.review-error {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(196, 112, 112, 0.28);
+  background: rgba(196, 112, 112, 0.12);
+  color: #f3caca;
 }
 
 .review-actions {

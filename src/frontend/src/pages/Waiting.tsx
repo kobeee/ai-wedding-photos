@@ -1,67 +1,250 @@
-import { useEffect, useState } from 'react'
+import { startTransition, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Aperture, CircleCheck, Loader, Circle } from 'lucide-react'
+import { Aperture, Circle, CircleAlert, CircleCheck, Loader, RefreshCw } from 'lucide-react'
+import {
+  apiRequest,
+  fetchLatestOrder,
+  type BatchListResponse,
+  type DeliverableListResponse,
+  type GenerationBatchInfo,
+  type OrderInfo,
+  type StartOrderResponse,
+} from '../lib/api'
+import { getWorkflowState, updateWorkflowState } from '../lib/workflow'
 import './Waiting.css'
 
-const messages = [
-  '正在为您布置法式街角的灯光...',
-  '正在调整新娘的头纱质感...',
-  '摄影师正在抓拍最完美的笑容...',
-  '正在进行AI质检与修复...',
-  '即将完成，请稍候...',
+const steps = [
+  '订单权益已锁定',
+  '视觉语境与妆造偏好已编译',
+  '正在分批渲染本单交付',
+  '质检完成，准备进入交付页',
 ]
 
-const steps = [
-  '数字人特征提取完成',
-  '摄影参数编译完成',
-  '正在渲染4K底图...',
-  'AI质检与修复',
-]
+const groomPreferenceMap: Record<string, string> = {
+  natural: 'natural clean grooming',
+  refined: 'polished refined grooming',
+  sculpt: 'editorial sculpted grooming',
+}
+
+const bridePreferenceMap: Record<string, string> = {
+  natural: 'natural translucent bridal makeup',
+  refined: 'refined elegant bridal makeup',
+  sculpt: 'high-fashion sculpted bridal makeup',
+}
+
+function getCurrentStep(progress: number, status: GenerationBatchInfo['status'] | ''): number {
+  if (status === 'completed') {
+    return 3
+  }
+  if (progress < 25) {
+    return 0
+  }
+  if (progress < 55) {
+    return 1
+  }
+  if (progress < 85) {
+    return 2
+  }
+  return 3
+}
 
 export default function Waiting() {
   const navigate = useNavigate()
-  const [progress, setProgress] = useState(62)
-  const [msgIdx, setMsgIdx] = useState(0)
-  const [currentStep, setCurrentStep] = useState(2)
+  const workflow = getWorkflowState()
+  const [resolvedOrderId, setResolvedOrderId] = useState(workflow.orderId || '')
+  const [order, setOrder] = useState<OrderInfo | null>(null)
+  const [progress, setProgress] = useState(workflow.progress || 0)
+  const [message, setMessage] = useState(workflow.taskMessage || '正在准备订单履约...')
+  const [status, setStatus] = useState<GenerationBatchInfo['status'] | ''>((workflow.taskStatus as GenerationBatchInfo['status']) || '')
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    let timer: ReturnType<typeof setInterval> | undefined
-    const starter = setTimeout(() => {
-      timer = setInterval(() => {
-        setProgress(p => {
-          if (p >= 100) {
-            if (timer) {
-              clearInterval(timer)
-            }
-            setTimeout(() => navigate('/review'), 500)
-            return 100
-          }
-          return p + 2
-        })
-      }, 120)
-    }, 1800)
+    if (resolvedOrderId) {
+      return
+    }
 
-    return () => {
-      clearTimeout(starter)
-      if (timer) {
-        clearInterval(timer)
+    let cancelled = false
+
+    async function resolveLatestOrder() {
+      try {
+        const latestOrder = await fetchLatestOrder()
+        if (cancelled) {
+          return
+        }
+        if (!latestOrder) {
+          startTransition(() => {
+            navigate('/checkout')
+          })
+          return
+        }
+
+        setResolvedOrderId(latestOrder.order_id)
+        setOrder(latestOrder)
+        updateWorkflowState({
+          orderId: latestOrder.order_id,
+          orderPaymentStatus: latestOrder.payment_status,
+          orderFulfillmentStatus: latestOrder.fulfillment_status,
+          promisedPhotos: latestOrder.entitlement_snapshot.promised_photos,
+          deliverableCount: latestOrder.deliverable_count,
+          remainingReruns: latestOrder.remaining_reruns,
+        })
+      } catch {
+        if (!cancelled) {
+          startTransition(() => {
+            navigate('/checkout')
+          })
+        }
       }
     }
-  }, [navigate])
+
+    void resolveLatestOrder()
+
+    return () => {
+      cancelled = true
+    }
+  }, [navigate, resolvedOrderId])
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setMsgIdx(i => (i + 1) % messages.length)
-    }, 3000)
-    return () => clearInterval(timer)
-  }, [])
+    if (!resolvedOrderId) {
+      return
+    }
 
-  useEffect(() => {
-    if (progress < 25) setCurrentStep(0)
-    else if (progress < 50) setCurrentStep(1)
-    else if (progress < 80) setCurrentStep(2)
-    else setCurrentStep(3)
-  }, [progress])
+    let cancelled = false
+    let timer: number | undefined
+
+    const syncOrder = async () => {
+      const [orderPayload, batches, deliverables] = await Promise.all([
+        apiRequest<OrderInfo>(`/api/orders/${resolvedOrderId}`),
+        apiRequest<BatchListResponse>(`/api/orders/${resolvedOrderId}/batches`),
+        apiRequest<DeliverableListResponse>(`/api/orders/${resolvedOrderId}/deliverables`),
+      ])
+
+      if (cancelled) {
+        return
+      }
+
+      setOrder(orderPayload)
+      const latestBatch = batches.items[0]
+      const resultUrls = deliverables.items.map(item => item.url)
+      const currentMessage = latestBatch?.message || '正在准备订单履约...'
+      const currentStatus = latestBatch?.status || ''
+      const currentProgress = latestBatch?.progress || 0
+
+      setProgress(currentProgress)
+      setMessage(currentMessage)
+      setStatus(currentStatus)
+      updateWorkflowState({
+        orderId: orderPayload.order_id,
+        orderPaymentStatus: orderPayload.payment_status,
+        orderFulfillmentStatus: orderPayload.fulfillment_status,
+        batchId: latestBatch?.batch_id,
+        taskStatus: currentStatus,
+        taskMessage: currentMessage,
+        progress: currentProgress,
+        qualityScore: latestBatch?.quality_score,
+        promisedPhotos: orderPayload.entitlement_snapshot.promised_photos,
+        deliverableCount: orderPayload.deliverable_count,
+        remainingReruns: orderPayload.remaining_reruns,
+        resultUrls,
+      })
+
+      if (orderPayload.payment_status !== 'paid' && orderPayload.payment_status !== 'free_granted') {
+        startTransition(() => {
+          navigate(`/pay/result?order_id=${orderPayload.order_id}`)
+        })
+        return
+      }
+
+      if ((orderPayload.fulfillment_status === 'delivered' || orderPayload.fulfillment_status === 'partially_delivered') && resultUrls.length > 0) {
+        startTransition(() => {
+          navigate('/review')
+        })
+        return
+      }
+
+      if (latestBatch?.status === 'failed') {
+        setError(latestBatch.failure_reason || latestBatch.message || '本次履约失败，请重试')
+        return
+      }
+
+      timer = window.setTimeout(() => {
+        void syncOrder()
+      }, 4000)
+    }
+
+    const ensureBatchStarted = async () => {
+      try {
+        setError('')
+        setMessage('正在校验订单状态...')
+
+        const orderPayload = await apiRequest<OrderInfo>(`/api/orders/${resolvedOrderId}`)
+        if (cancelled) {
+          return
+        }
+        setOrder(orderPayload)
+
+        if (orderPayload.payment_status !== 'paid' && orderPayload.payment_status !== 'free_granted') {
+          startTransition(() => {
+            navigate(`/pay/result?order_id=${orderPayload.order_id}`)
+          })
+          return
+        }
+
+        if (!orderPayload.latest_batch || !['pending', 'processing', 'completed'].includes(orderPayload.latest_batch.status)) {
+          const payload = await apiRequest<StartOrderResponse>(`/api/orders/${resolvedOrderId}/start`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              groom_style: groomPreferenceMap[workflow.selectedMakeup?.groom || 'natural'],
+              bride_style: bridePreferenceMap[workflow.selectedMakeup?.bride || 'refined'],
+            }),
+          })
+          if (cancelled) {
+            return
+          }
+          updateWorkflowState({
+            batchId: payload.batch_id,
+            orderFulfillmentStatus: payload.fulfillment_status,
+          })
+        }
+
+        await syncOrder()
+      } catch (syncError) {
+        if (!cancelled) {
+          setError(syncError instanceof Error ? syncError.message : '订单履约启动失败')
+        }
+      }
+    }
+
+    void ensureBatchStarted()
+
+    return () => {
+      cancelled = true
+      if (timer) {
+        window.clearTimeout(timer)
+      }
+    }
+  }, [navigate, resolvedOrderId, workflow.selectedMakeup?.bride, workflow.selectedMakeup?.groom])
+
+  const currentStep = getCurrentStep(progress, status)
+
+  const handleRetry = () => {
+    setError('')
+    updateWorkflowState({
+      batchId: undefined,
+      taskStatus: undefined,
+      taskMessage: undefined,
+      progress: undefined,
+      qualityScore: undefined,
+    })
+    window.location.reload()
+  }
+
+  if (!resolvedOrderId) {
+    return null
+  }
 
   return (
     <div className="waiting-page">
@@ -69,30 +252,56 @@ export default function Waiting() {
         <div className="waiting-ring">
           <Aperture size={60} color="var(--accent-gold)" />
         </div>
+
         <div className="waiting-texts">
-          <h1>{messages[msgIdx]}</h1>
-          <p>AI摄影师正在全力创作，请稍候片刻</p>
+          <h1>{error || message}</h1>
+          <p>
+            {error
+              ? '这笔订单尚未完成履约，你可以重试当前订单批次。'
+              : `订单 ${resolvedOrderId} · ${order?.package_name || workflow.selectedPackage?.name || '定制方案'} · 已承诺 ${order?.entitlement_snapshot.promised_photos || workflow.promisedPhotos || 0} 张`}
+          </p>
         </div>
-        <div className="waiting-progress">
-          <div className="waiting-bar">
-            <div className="waiting-bar__fill" style={{ width: `${progress}%` }} />
+
+        {error ? (
+          <div className="waiting-error">
+            <CircleAlert size={18} />
+            <span>{error}</span>
           </div>
-          <span>{progress}%</span>
-        </div>
+        ) : (
+          <div className="waiting-progress">
+            <div className="waiting-bar">
+              <div className="waiting-bar__fill" style={{ width: `${progress}%` }} />
+            </div>
+            <span>{progress}%</span>
+          </div>
+        )}
+
         <div className="waiting-steps">
-          {steps.map((s, i) => (
-            <div key={i} className="waiting-step">
-              {i < currentStep ? (
+          {steps.map((step, index) => (
+            <div key={step} className="waiting-step">
+              {index < currentStep ? (
                 <CircleCheck size={16} color="var(--accent-gold)" />
-              ) : i === currentStep ? (
+              ) : index === currentStep && !error ? (
                 <Loader size={16} color="var(--accent-gold)" className="waiting-spin" />
               ) : (
                 <Circle size={16} color="var(--text-muted)" />
               )}
-              <span className={i <= currentStep ? 'waiting-step--active' : ''}>{s}</span>
+              <span className={index <= currentStep && !error ? 'waiting-step--active' : ''}>{step}</span>
             </div>
           ))}
         </div>
+
+        {error ? (
+          <div className="waiting-actions">
+            <button className="btn btn--outline-light" onClick={() => navigate(`/pay/result?order_id=${resolvedOrderId}`)}>
+              返回订单
+            </button>
+            <button className="btn btn--gold" onClick={handleRetry}>
+              <RefreshCw size={16} />
+              重新发起履约
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   )

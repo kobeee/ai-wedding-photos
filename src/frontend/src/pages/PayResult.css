@@ -1,0 +1,113 @@
+.pay-result-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top, rgba(201, 169, 110, 0.18), transparent 30%),
+    linear-gradient(180deg, #0b0a09 0%, #0a0a0a 100%);
+}
+
+.pay-result-main {
+  width: min(100%, 760px);
+}
+
+.pay-result-card {
+  padding: 40px;
+  border-radius: 28px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(20, 18, 16, 0.9);
+  text-align: center;
+}
+
+.pay-result-card__status {
+  display: flex;
+  justify-content: center;
+}
+
+.pay-result-spin {
+  animation: spin 1s linear infinite;
+}
+
+.pay-result-card__eyebrow {
+  margin-top: 18px;
+  display: inline-block;
+  color: var(--accent-gold-light);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.pay-result-card h1 {
+  margin-top: 14px;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1;
+}
+
+.pay-result-card p {
+  margin-top: 12px;
+  color: var(--text-secondary);
+}
+
+.pay-result-summary {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.pay-result-summary div {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(30, 28, 26, 0.88);
+  border: 1px solid var(--border-subtle);
+}
+
+.pay-result-summary span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.pay-result-summary strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.1rem;
+}
+
+.pay-result-error {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(196, 112, 112, 0.28);
+  background: rgba(196, 112, 112, 0.12);
+  color: #f3caca;
+}
+
+.pay-result-actions {
+  margin-top: 28px;
+}
+
+.pay-result-page .btn--outline-light {
+  margin-top: 12px;
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .pay-result-card {
+    padding: 28px 22px;
+    border-radius: 22px;
+  }
+
+  .pay-result-summary {
+    grid-template-columns: 1fr;
+  }
+}

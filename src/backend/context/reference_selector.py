@@ -20,8 +20,8 @@ from utils.storage import upload_metadata_path
 
 logger = logging.getLogger(__name__)
 
-MAX_PRIMARY = 1
-MAX_AUXILIARY = 2
+MAX_PRIMARY = 3
+MAX_AUXILIARY = 1
 MAX_TOTAL = MAX_PRIMARY + MAX_AUXILIARY
 
 # 最小可接受尺寸（像素，短边）
@@ -62,7 +62,7 @@ class ReferenceSet:
 
     @property
     def selected_role_counts(self) -> dict[str, int]:
-        counts = {"bride": 0, "groom": 0, "unknown": 0}
+        counts = {"couple": 0, "bride": 0, "groom": 0, "unknown": 0}
         for ref in self.primary + self.auxiliary:
             counts[ref.role if ref.role in counts else "unknown"] += 1
         return counts
@@ -71,6 +71,11 @@ class ReferenceSet:
     def has_couple_identity(self) -> bool:
         counts = self.selected_role_counts
         return counts["bride"] > 0 and counts["groom"] > 0
+
+    @property
+    def has_couple_anchor(self) -> bool:
+        counts = self.selected_role_counts
+        return counts["couple"] > 0
 
 
 def _image_quality_score(data: bytes) -> float:
@@ -136,7 +141,7 @@ def _load_role(image_path: Path) -> str:
         return "unknown"
 
     role = str(raw.get("role", "")).strip().lower()
-    if role in {"bride", "groom"}:
+    if role in {"couple", "bride", "groom"}:
         return role
     return "unknown"
 
@@ -176,6 +181,7 @@ def select_references(upload_dir: Path) -> ReferenceSet:
     candidates.sort(key=lambda x: x[0], reverse=True)
 
     grouped: dict[str, list[tuple[float, Path, bytes, str, str]]] = {
+        "couple": [],
         "bride": [],
         "groom": [],
         "unknown": [],
@@ -185,16 +191,34 @@ def select_references(upload_dir: Path) -> ReferenceSet:
 
     selected_paths: set[Path] = set()
 
-    # couple 模式：优先保证新郎/新娘各至少一张。
-    if grouped["bride"] and grouped["groom"]:
+    if grouped["couple"]:
+        _, fpath, data, mime, role = grouped["couple"][0]
+        result.primary.append(
+            ReferenceImage(data=data, mime=mime, role=role, path=str(fpath)),
+        )
+        selected_paths.add(fpath)
+
+    # 无 couple 锚点时，保持原有 bride + groom 逻辑。
+    if not result.primary and grouped["bride"] and grouped["groom"]:
         for role in ("bride", "groom"):
             _, fpath, data, mime, _ = grouped[role][0]
             result.primary.append(
                 ReferenceImage(data=data, mime=mime, role=role, path=str(fpath)),
             )
             selected_paths.add(fpath)
-    else:
+    elif not result.primary:
         _, fpath, data, mime, role = candidates[0]
+        result.primary.append(
+            ReferenceImage(data=data, mime=mime, role=role, path=str(fpath)),
+        )
+        selected_paths.add(fpath)
+
+    for role in ("bride", "groom"):
+        if len(result.primary) >= MAX_PRIMARY or not grouped[role]:
+            continue
+        _, fpath, data, mime, _ = grouped[role][0]
+        if fpath in selected_paths:
+            continue
         result.primary.append(
             ReferenceImage(data=data, mime=mime, role=role, path=str(fpath)),
         )

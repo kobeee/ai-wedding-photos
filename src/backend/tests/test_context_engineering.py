@@ -22,7 +22,9 @@ from context.prompt_assembler import (
 from context.reference_selector import select_references
 from context.slot_renderer import render_slots
 from context.thresholds import RepairMode, decide_repair, meets_delivery_floor
+from services.delivery_image import _prepare_delivery_image_sync
 from services.director import director_service
+from services.nano_banana import NanoBananaService
 from services.vlm_checker import VLMCheckerService
 from utils.storage import upload_metadata_path
 
@@ -108,6 +110,33 @@ class ContextEngineeringTests(unittest.TestCase):
         self.assertEqual(selected.selected_role_counts["groom"], 1)
         self.assertLessEqual(selected.count, 3)
 
+    def test_reference_selector_prioritizes_couple_anchor_before_single_refs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            upload_dir = Path(tmp)
+            samples = [
+                ("couple", _make_image_bytes((1200, 1600), (210, 190, 180))),
+                ("bride", _make_image_bytes((1180, 1580), (240, 210, 210))),
+                ("groom", _make_image_bytes((1160, 1560), (120, 120, 140))),
+                ("unknown", _make_image_bytes((900, 1200), (180, 180, 180))),
+            ]
+
+            for index, (role, data) in enumerate(samples):
+                image_path = upload_dir / f"sample_{index}.jpg"
+                image_path.write_bytes(data)
+                upload_metadata_path(image_path).write_text(
+                    json.dumps({"role": role}, ensure_ascii=False),
+                    encoding="utf-8",
+                )
+
+            selected = select_references(upload_dir)
+
+        self.assertTrue(selected.has_couple_anchor)
+        self.assertEqual(selected.primary[0].role, "couple")
+        self.assertEqual(selected.primary[1].role, "bride")
+        self.assertEqual(selected.primary[2].role, "groom")
+        self.assertEqual(selected.selected_role_counts["couple"], 1)
+        self.assertLessEqual(selected.count, 4)
+
     def test_prompt_assembler_uses_generic_couple_anchor_when_refs_are_incomplete(self) -> None:
         brief = get_brief("iceland")
         variant = brief.variants[0]
@@ -123,6 +152,22 @@ class ContextEngineeringTests(unittest.TestCase):
 
         self.assertIn("identity guidance for this wedding portrait", prompt)
         self.assertNotIn("real bride and groom", prompt)
+
+    def test_prompt_assembler_adds_weak_body_anchor_only_when_couple_photo_exists(self) -> None:
+        brief = get_brief("iceland")
+        variant = brief.variants[0]
+        slots = render_slots(gender="couple")
+
+        prompt = assemble_generation_prompt(
+            brief=brief,
+            variant=variant,
+            slots=slots,
+            has_refs=True,
+            has_couple_refs=True,
+            has_couple_anchor=True,
+        )
+
+        self.assertIn("The first reference image is a full-body couple photo.", prompt)
 
     def test_vlm_fallback_blocks_delivery(self) -> None:
         report = VLMCheckerService._fallback_report("service unavailable")
@@ -148,6 +193,25 @@ class ContextEngineeringTests(unittest.TestCase):
         assert prepared_size is not None
         self.assertLessEqual(max(prepared_size), 1536)
         self.assertGreater(len(prepared), 0)
+
+    def test_nano_image_size_normalization_matches_laozhang_contract(self) -> None:
+        self.assertEqual(NanoBananaService._normalize_size("1024"), "1K")
+        self.assertEqual(NanoBananaService._normalize_size("1k"), "1K")
+        self.assertEqual(NanoBananaService._normalize_size("2048"), "2K")
+        self.assertEqual(NanoBananaService._normalize_size("4096"), "4K")
+        self.assertEqual(NanoBananaService._normalize_size("weird"), "1K")
+
+    def test_delivery_image_is_upscaled_to_4k_long_edge(self) -> None:
+        image_bytes = _make_image_bytes((896, 1200), (220, 210, 205))
+
+        processed, original_size, final_size = _prepare_delivery_image_sync(
+            image_bytes,
+            target_long_edge=4096,
+        )
+
+        self.assertEqual(original_size, (896, 1200))
+        self.assertEqual(max(final_size), 4096)
+        self.assertGreater(len(processed), 0)
 
     def test_nano_repair_prompt_preserves_identity_and_refs(self) -> None:
         prompt = assemble_nano_repair_prompt(

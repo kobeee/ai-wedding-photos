@@ -15,7 +15,7 @@
 
 .upload-title {
   text-align: center;
-  max-width: 42rem;
+  max-width: 48rem;
   display: grid;
   gap: 12px;
   justify-items: center;
@@ -36,10 +36,41 @@
   line-height: 1.75;
 }
 
+.upload-highlight {
+  width: min(100%, 780px);
+  border: 1px solid color-mix(in srgb, var(--accent-gold) 35%, transparent);
+  background: linear-gradient(135deg, rgba(201, 169, 110, 0.14), rgba(201, 169, 110, 0.04));
+  border-radius: 20px;
+  padding: 24px 28px;
+  display: grid;
+  gap: 10px;
+}
+
+.upload-highlight__badge {
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(201, 169, 110, 0.18);
+  color: var(--accent-gold);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.upload-highlight p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
 .upload-cards {
   display: flex;
   gap: 32px;
   width: 100%;
+}
+
+.upload-cards--single {
+  justify-content: center;
 }
 
 .upload-card {
@@ -52,6 +83,11 @@
   flex-direction: column;
   align-items: center;
   gap: 28px;
+}
+
+.upload-card--couple {
+  width: min(100%, 820px);
+  flex: none;
 }
 
 .upload-card__label {
@@ -78,10 +114,15 @@
   gap: 16px;
   cursor: pointer;
   transition: border-color 0.2s;
+  background: rgba(255, 255, 255, 0.01);
 }
 
 .upload-card__dropzone:hover {
   border-color: var(--accent-gold);
+}
+
+.upload-card__dropzone--compact {
+  min-height: 220px;
 }
 
 .upload-card__dropzone p {
@@ -107,18 +148,27 @@
 }
 
 .upload-card__previews {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
   padding: 16px;
   width: 100%;
 }
 
+.upload-card__previews--hero {
+  grid-template-columns: 1fr;
+}
+
 .upload-card__thumb {
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
   overflow: hidden;
+}
+
+.upload-card__thumb--hero {
+  aspect-ratio: 16 / 9;
 }
 
 .upload-card__thumb img {
@@ -127,11 +177,38 @@
   object-fit: cover;
 }
 
+.upload-card__thumb button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(10, 10, 10, 0.72);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
 .upload-card__hint {
   font-size: 12px;
   color: var(--text-muted);
   text-align: center;
   line-height: 1.8;
+}
+
+.upload-feedback {
+  width: min(100%, 720px);
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.upload-feedback--error {
+  color: #f3b3b3;
 }
 
 .upload-bottom {
@@ -164,12 +241,15 @@
   background: var(--accent-gold-hover);
 }
 
-/* Tablet */
+.upload-page .btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 @media (max-width: 1024px) {
   .upload-main { padding: 48px 40px; }
 }
 
-/* Mobile */
 @media (max-width: 768px) {
   .upload-main { padding: 32px 20px; gap: 36px; }
   .upload-title {
@@ -184,11 +264,21 @@
     font-size: 13px;
     line-height: 1.7;
   }
+  .upload-highlight {
+    padding: 18px 18px 20px;
+    gap: 8px;
+  }
+  .upload-highlight p {
+    font-size: 13px;
+  }
   .upload-cards { flex-direction: column; gap: 20px; }
   .upload-card { padding: 28px 20px; gap: 20px; }
   .upload-card__label span { font-size: 16px; }
   .upload-card__dropzone { min-height: 200px; }
-  .upload-card__thumb { width: 60px; height: 60px; }
+  .upload-card__previews {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
   .upload-bottom {
     width: 100%;
     padding-top: 8px;

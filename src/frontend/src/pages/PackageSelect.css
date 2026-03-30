@@ -76,6 +76,10 @@
   cursor: pointer;
   transition: all 0.2s;
   border: 1px solid transparent;
+  text-align: left;
+  padding: 0;
+  color: inherit;
+  appearance: none;
 }
 
 .pkg-card--selected {
@@ -126,6 +130,11 @@
 .pkg-card__badge--svip {
   border: 1px solid var(--accent-gold);
   color: var(--accent-gold);
+}
+
+.pkg-feedback {
+  font-size: 13px;
+  color: #f3b3b3;
 }
 
 .pkg-bottom {

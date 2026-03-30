@@ -36,6 +36,32 @@
   line-height: 1.75;
 }
 
+.makeup-feedback {
+  width: min(100%, 720px);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid rgba(243, 179, 179, 0.28);
+  background: rgba(243, 179, 179, 0.08);
+}
+
+.makeup-feedback--error {
+  color: #f3b3b3;
+}
+
+.makeup-feedback button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
 .makeup-section {
   width: 100%;
   display: flex;
@@ -68,6 +94,13 @@
   cursor: pointer;
   transition: all 0.2s;
   border: 1px solid transparent;
+  text-align: left;
+  padding: 0;
+  color: inherit;
+}
+
+.makeup-card:disabled {
+  cursor: progress;
 }
 
 .makeup-card--selected {
@@ -75,10 +108,29 @@
   border-width: 1.5px;
 }
 
+.makeup-card--loading {
+  border-color: var(--border-subtle);
+}
+
 .makeup-card__img {
   height: 240px;
   background: #1A1A1A center/cover no-repeat;
   border-radius: 16px 16px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.makeup-card--loading .makeup-card__img {
+  background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+  background-size: 200% 100%;
+  animation: makeup-shimmer 1.8s linear infinite;
+}
+
+.makeup-card__img span {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
 }
 
 .makeup-card__info {
@@ -137,12 +189,20 @@
   border-color: var(--text-primary);
 }
 
-/* Tablet */
+.makeup-page .btn--gold:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@keyframes makeup-shimmer {
+  from { background-position: 0 0; }
+  to { background-position: 200% 0; }
+}
+
 @media (max-width: 1024px) {
   .makeup-main { padding: 48px 40px; }
 }
 
-/* Mobile */
 @media (max-width: 768px) {
   .makeup-main { padding: 32px 20px; gap: 36px; }
   .makeup-title h1 {
@@ -153,6 +213,11 @@
   .makeup-title p {
     font-size: 13px;
     line-height: 1.7;
+  }
+  .makeup-feedback {
+    width: 100%;
+    align-items: flex-start;
+    flex-direction: column;
   }
   .makeup-section { gap: 18px; }
   .makeup-section__header span { font-size: 16px; }
