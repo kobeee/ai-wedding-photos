@@ -35,4 +35,10 @@ async def read_private_file(kind: str, user_id: str, filename: str, request: Req
     if not file_path.exists() or not file_path.is_file():
         raise HTTPException(status_code=404, detail="File not found")
 
-    return FileResponse(file_path)
+    return FileResponse(
+        file_path,
+        headers={
+            "Cache-Control": "private, no-store, max-age=0",
+            "Pragma": "no-cache",
+        },
+    )

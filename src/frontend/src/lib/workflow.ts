@@ -22,8 +22,17 @@ export interface MakeupSelection {
   bride: string
 }
 
+export interface PersistedUploadFile {
+  id: string
+  filename: string
+  url: string
+  role: string
+  slot: string
+}
+
 export interface WorkflowState {
   userId?: string
+  uploadedFiles?: PersistedUploadFile[]
   uploadsComplete?: boolean
   makeupOptions?: MakeupOptions
   selectedMakeup?: MakeupSelection

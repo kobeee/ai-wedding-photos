@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import json
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -11,9 +11,10 @@ from config import settings
 from models.schemas import MakeupRequest, MakeupResponse, Gender, MakeupStyle
 from services.nano_banana import nano_banana_service
 from utils.storage import (
-    save_generated_image,
+    read_upload_metadata,
     read_file_bytes,
-    upload_metadata_path,
+    save_generated_image,
+    user_output_dir,
     user_upload_dir,
 )
 
@@ -70,26 +71,110 @@ def _mime_type_for_path(path: Path) -> str:
     return "image/png" if path.suffix.lower() == ".png" else "image/jpeg"
 
 
+def _reference_signature(ref_image_path: Path | None) -> str:
+    if ref_image_path is None or not ref_image_path.exists():
+        return "no-reference"
+
+    stat = ref_image_path.stat()
+    return f"{ref_image_path.name}:{stat.st_mtime_ns}:{stat.st_size}"
+
+
+def _makeup_cache_manifest_path(user_id: str, gender: Gender) -> Path:
+    return user_output_dir(user_id) / f"makeup-{gender.value}-cache.json"
+
+
+def _output_url(user_id: str, path: Path) -> str:
+    version = 0
+    try:
+        version = path.stat().st_mtime_ns
+    except OSError:
+        logger.warning("Failed to read output file timestamp for cache key: %s", path)
+
+    return f"/api/files/outputs/{user_id}/{path.name}?v={version}"
+
+
+def _load_cached_makeup(
+    user_id: str,
+    gender: Gender,
+    reference_signature: str,
+) -> list[str] | None:
+    manifest_path = _makeup_cache_manifest_path(user_id, gender)
+    if not manifest_path.exists():
+        return None
+
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        logger.warning("Failed to read makeup cache manifest: %s", manifest_path)
+        return None
+
+    if payload.get("reference_signature") != reference_signature:
+        return None
+
+    filenames = payload.get("filenames")
+    if not isinstance(filenames, list) or len(filenames) != len(ALL_STYLES):
+        return None
+
+    base_dir = user_output_dir(user_id).resolve()
+    cached_urls: list[str] = []
+    for filename in filenames:
+        file_path = (base_dir / str(filename)).resolve()
+        try:
+            file_path.relative_to(base_dir)
+        except ValueError:
+            return None
+
+        if not file_path.exists() or not file_path.is_file():
+            return None
+
+        cached_urls.append(_output_url(user_id, file_path))
+
+    return cached_urls
+
+
+def _save_cached_makeup(
+    user_id: str,
+    gender: Gender,
+    reference_signature: str,
+    image_paths: list[Path],
+) -> None:
+    manifest_path = _makeup_cache_manifest_path(user_id, gender)
+    payload = {
+        "reference_signature": reference_signature,
+        "filenames": [path.name for path in image_paths],
+    }
+    try:
+        manifest_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    except OSError:
+        logger.warning("Failed to persist makeup cache manifest: %s", manifest_path)
+
+
 def _find_user_reference_image(user_id: str, gender: Gender) -> Path | None:
     """优先按性别角色选择参考图，避免误用双人照或另一方照片。"""
     upload_dir = user_upload_dir(user_id)
     preferred_role = "groom" if gender == Gender.male else "bride"
+    preferred_slot = "groom_portrait" if gender == Gender.male else "bride_portrait"
+    role_candidates: list[tuple[int, Path]] = []
     fallbacks: list[Path] = []
 
     for ext in ("*.jpg", "*.jpeg", "*.png"):
         files = sorted(upload_dir.glob(ext))
         for image_path in files:
-            meta_path = upload_metadata_path(image_path)
-            role = ""
-            if meta_path.exists():
-                try:
-                    payload = json.loads(meta_path.read_text(encoding="utf-8"))
-                    role = str(payload.get("role", "")).strip().lower()
-                except (OSError, json.JSONDecodeError):
-                    logger.warning("Failed to read upload metadata for %s", image_path)
-            if role == preferred_role:
-                return image_path
+            metadata = read_upload_metadata(image_path)
+            validation = metadata.get("validation")
+            if isinstance(validation, dict) and validation.get("accepted") is False:
+                continue
+
+            role = str(metadata.get("role", "")).strip().lower()
+            slot = str(metadata.get("slot", "")).strip().lower()
             fallbacks.append(image_path)
+            if role == preferred_role:
+                score = 2 if slot == preferred_slot else 1
+                role_candidates.append((score, image_path))
+
+    if role_candidates:
+        role_candidates.sort(key=lambda item: item[0], reverse=True)
+        return role_candidates[0][1]
 
     return fallbacks[0] if fallbacks else None
 
@@ -118,7 +203,13 @@ async def generate_makeup(req: MakeupRequest, request: Request):
         ref_mime_type = _mime_type_for_path(ref_image_path)
         logger.info("Using reference image: %s", ref_image_path)
 
-    async def _render_style(style: MakeupStyle) -> str:
+    reference_signature = _reference_signature(ref_image_path)
+    cached_urls = _load_cached_makeup(req.user_id, req.gender, reference_signature)
+    if cached_urls:
+        logger.info("Using cached makeup previews for user=%s gender=%s", req.user_id, req.gender.value)
+        return MakeupResponse(user_id=req.user_id, images=cached_urls)
+
+    async def _render_style(style: MakeupStyle) -> Path | None:
         prompt = _get_prompt(req.gender, style)
 
         try:
@@ -134,22 +225,24 @@ async def generate_makeup(req: MakeupRequest, request: Request):
                 img_bytes = await nano_banana_service.text_to_image(prompt=prompt)
 
             _, path = await save_generated_image(req.user_id, img_bytes)
-            return f"/api/files/outputs/{req.user_id}/{path.name}"
+            return path
 
         except RuntimeError as exc:
             # API key 未配置
             raise HTTPException(status_code=503, detail=str(exc)) from exc
         except Exception:
             logger.exception("Makeup generation failed for style=%s", style.value)
-            return ""
+            return None
 
-    result_urls = list(await asyncio.gather(*(_render_style(style) for style in ALL_STYLES)))
+    result_paths = list(await asyncio.gather(*(_render_style(s) for s in ALL_STYLES)))
 
-    valid_urls = [u for u in result_urls if u]
-    if len(valid_urls) != len(ALL_STYLES):
+    valid_paths = [path for path in result_paths if path is not None]
+    if len(valid_paths) != len(ALL_STYLES):
         raise HTTPException(
             status_code=502,
             detail="Makeup preview generation incomplete",
         )
 
+    _save_cached_makeup(req.user_id, req.gender, reference_signature, valid_paths)
+    valid_urls = [_output_url(req.user_id, path) for path in valid_paths]
     return MakeupResponse(user_id=req.user_id, images=valid_urls)

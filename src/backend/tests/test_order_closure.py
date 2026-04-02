@@ -167,6 +167,7 @@ class OrderClosureTests(unittest.TestCase):
                 file_response = client.get(items[0]["url"])
                 self.assertEqual(file_response.status_code, 200)
                 self.assertGreater(len(file_response.content), 0)
+                self.assertIn("no-store", file_response.headers.get("cache-control", ""))
 
                 rerun_response = client.post(
                     f"/api/orders/{order_id}/reruns",
@@ -176,6 +177,50 @@ class OrderClosureTests(unittest.TestCase):
                     },
                 )
                 self.assertEqual(rerun_response.status_code, 200)
+
+    def test_makeup_route_reuses_cached_previews_for_same_reference(self) -> None:
+        fake_image = _make_image_bytes()
+        image_to_image = AsyncMock(return_value=fake_image)
+
+        with (
+            patch("routers.makeup.nano_banana_service.image_to_image", new=image_to_image),
+            patch("routers.makeup.nano_banana_service.text_to_image", new=AsyncMock(return_value=fake_image)),
+            TestClient(app) as client,
+        ):
+            upload_response = client.post(
+                "/api/upload",
+                files=[
+                    ("files", ("bride.png", fake_image, "image/png")),
+                    ("roles", (None, "bride")),
+                    ("slots", (None, "bride_portrait")),
+                ],
+            )
+            self.assertEqual(upload_response.status_code, 200)
+            user_id = upload_response.json()["user_id"]
+
+            first_response = client.post(
+                "/api/makeup/generate",
+                json={
+                    "user_id": user_id,
+                    "gender": "female",
+                    "style": "natural",
+                },
+            )
+            self.assertEqual(first_response.status_code, 200)
+            self.assertEqual(len(first_response.json()["images"]), 3)
+            self.assertTrue(all("?v=" in image_url for image_url in first_response.json()["images"]))
+
+            second_response = client.post(
+                "/api/makeup/generate",
+                json={
+                    "user_id": user_id,
+                    "gender": "female",
+                    "style": "natural",
+                },
+            )
+            self.assertEqual(second_response.status_code, 200)
+            self.assertEqual(second_response.json()["images"], first_response.json()["images"])
+            self.assertEqual(image_to_image.await_count, 3)
 
 
 if __name__ == "__main__":

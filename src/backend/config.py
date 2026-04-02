@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     nano_banana_model: str = "gemini-3-pro-image-preview"
     nano_timeout_seconds: int = 300
     nano_image_size: str = "1K"
+    nano_reference_max_image_dimension: int = 1280
+    nano_reference_jpeg_quality: int = 82
+    nano_reference_min_jpeg_quality: int = 52
+    nano_reference_max_bytes: int = 220 * 1024
+    nano_reference_total_max_bytes: int = 880 * 1024
+    nano_reference_max_images: int = 4
 
     # GPT Image
     gpt_image_model: str = "gpt-image-1.5"
@@ -26,12 +32,23 @@ class Settings(BaseSettings):
     vlm_max_tokens: int = 2048
     vlm_max_image_dimension: int = 1536
     vlm_jpeg_quality: int = 85
+    upload_validation_timeout_seconds: int = 90
+    upload_validation_max_tokens: int = 900
+    upload_validation_max_image_dimension: int = 768
+    upload_validation_jpeg_quality: int = 72
+    upload_validation_min_jpeg_quality: int = 48
+    upload_validation_max_bytes: int = 180 * 1024
+    upload_validation_total_max_bytes: int = 720 * 1024
+    upload_validation_max_images: int = 4
 
     # Storage
     upload_dir: str = "./uploads"
     output_dir: str = "./outputs"
     db_path: str = "./data/lumiere.db"
     max_upload_size: int = 10 * 1024 * 1024  # 10MB
+    upload_store_max_image_dimension: int = 2200
+    upload_store_jpeg_quality: int = 88
+    upload_store_max_bytes: int = 3 * 1024 * 1024
     delivery_long_edge: int = 4096
 
     # Security

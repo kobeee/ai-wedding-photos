@@ -1,0 +1,39 @@
+{
+  "experiment": "v4_single_image",
+  "description": "综合 v2(B+) + v3 教训: R1 控制裁切(85mm close-up); R2 绝不改构图只做细节精修; R3 强制单张输出 + 白纱可见 + 新娘身份锁定",
+  "package_id": "iceland",
+  "variant_id": "iceland_intimate",
+  "ref_count": 3,
+  "ref_roles": {
+    "couple": 1,
+    "bride": 1,
+    "groom": 1,
+    "unknown": 0
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "status": "ok",
+      "bytes": 750772,
+      "elapsed": 49.5,
+      "path": "/Users/elvis/Documents/codes/challenges/2026/Mar/AI-wedding-photos/src/backend/harness_outputs/v4_single_image_20260403_003149_R1_scene.png"
+    },
+    {
+      "round": 2,
+      "status": "ok",
+      "bytes": 708816,
+      "elapsed": 32.2,
+      "path": "/Users/elvis/Documents/codes/challenges/2026/Mar/AI-wedding-photos/src/backend/harness_outputs/v4_single_image_20260403_003149_R2_refined.png"
+    },
+    {
+      "round": 3,
+      "status": "ok",
+      "bytes": 609303,
+      "elapsed": 78.8,
+      "path": "/Users/elvis/Documents/codes/challenges/2026/Mar/AI-wedding-photos/src/backend/harness_outputs/v4_single_image_20260403_003149_R3_final.png"
+    }
+  ],
+  "total_elapsed": 160.5,
+  "cost_estimate": "~$0.39",
+  "timestamp": "20260403_003149"
+}

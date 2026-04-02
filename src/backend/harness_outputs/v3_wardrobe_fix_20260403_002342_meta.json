@@ -1,0 +1,39 @@
+{
+  "experiment": "v3_wardrobe_fix",
+  "description": "基于 Codex B+ 评审: 修复白纱可见度(禁深色披肩) + 新娘发型精确锁定(中长直黑发) + 保持 v2 的紧凑裁切和新郎身份效果",
+  "package_id": "iceland",
+  "variant_id": "iceland_intimate",
+  "ref_count": 3,
+  "ref_roles": {
+    "couple": 1,
+    "bride": 1,
+    "groom": 1,
+    "unknown": 0
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "status": "ok",
+      "bytes": 725777,
+      "elapsed": 28.2,
+      "path": "/Users/elvis/Documents/codes/challenges/2026/Mar/AI-wedding-photos/src/backend/harness_outputs/v3_wardrobe_fix_20260403_002342_R1_scene.png"
+    },
+    {
+      "round": 2,
+      "status": "ok",
+      "bytes": 645131,
+      "elapsed": 29.0,
+      "path": "/Users/elvis/Documents/codes/challenges/2026/Mar/AI-wedding-photos/src/backend/harness_outputs/v3_wardrobe_fix_20260403_002342_R2_refined.png"
+    },
+    {
+      "round": 3,
+      "status": "ok",
+      "bytes": 624746,
+      "elapsed": 42.4,
+      "path": "/Users/elvis/Documents/codes/challenges/2026/Mar/AI-wedding-photos/src/backend/harness_outputs/v3_wardrobe_fix_20260403_002342_R3_final.png"
+    }
+  ],
+  "total_elapsed": 99.6,
+  "cost_estimate": "~$0.39",
+  "timestamp": "20260403_002342"
+}

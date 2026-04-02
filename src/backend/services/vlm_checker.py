@@ -29,6 +29,58 @@ _UNAVAILABLE_CHANNEL_MARKERS = (
 )
 
 
+def _load_first_json_object(raw: str) -> dict:
+    """Best-effort parse of the first JSON object from model output."""
+    content = raw.strip()
+    if content.startswith("```"):
+        lines = content.splitlines()
+        if lines and lines[0].strip().startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        content = "\n".join(lines).strip()
+        if content.lower().startswith("json"):
+            content = content[4:].lstrip()
+
+    candidates: list[str] = [content]
+    start = content.find("{")
+    end = content.rfind("}")
+    if start >= 0 and end > start:
+        candidates.append(content[start : end + 1])
+
+    decoder = json.JSONDecoder()
+    last_error: Exception | None = None
+    for candidate in candidates:
+        normalized = (
+            candidate.strip()
+            .replace("\u201c", '"')
+            .replace("\u201d", '"')
+            .replace("\u2018", "'")
+            .replace("\u2019", "'")
+        )
+        if not normalized:
+            continue
+        try:
+            parsed = json.loads(normalized)
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError as exc:
+            last_error = exc
+
+        try:
+            json_start = normalized.find("{")
+            if json_start >= 0:
+                parsed, _ = decoder.raw_decode(normalized[json_start:])
+                if isinstance(parsed, dict):
+                    return parsed
+        except json.JSONDecodeError as exc:
+            last_error = exc
+
+    if last_error is not None:
+        raise last_error
+    raise json.JSONDecodeError("No JSON object found", raw, 0)
+
+
 @dataclass
 class QualityReport:
     """图片质检结果 — Phase 2 升级版。"""
@@ -239,31 +291,8 @@ class VLMCheckerService:
 
     def _parse_report(self, raw_content: str) -> QualityReport:
         """解析 VLM 返回的 JSON 质检报告。"""
-        content = raw_content.strip()
-
-        # 去掉 markdown 代码块
-        if content.startswith("```"):
-            lines = content.split("\n")
-            json_lines = []
-            inside = False
-            for line in lines:
-                if line.strip().startswith("```") and not inside:
-                    inside = True
-                    continue
-                if line.strip() == "```" and inside:
-                    break
-                if inside:
-                    json_lines.append(line)
-            content = "\n".join(json_lines)
-
-        if not content.startswith("{"):
-            start = content.find("{")
-            end = content.rfind("}")
-            if start != -1 and end != -1 and end > start:
-                content = content[start:end + 1]
-
         try:
-            result = json.loads(content)
+            result = _load_first_json_object(raw_content)
 
             hard_fail = bool(result.get("hard_fail", False))
             identity = float(result.get("identity_match", 0.85))

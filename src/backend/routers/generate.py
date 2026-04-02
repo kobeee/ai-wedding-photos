@@ -43,7 +43,7 @@ from models.schemas import (
 from services.delivery_image import prepare_delivery_image
 from services.director import director_service
 from services.gpt_image import gpt_image_service
-from services.nano_banana import nano_banana_service
+from services.nano_banana import NanoRequestTooLargeError, nano_banana_service
 from services.vlm_checker import vlm_checker_service
 from utils.storage import save_generated_image, user_upload_dir
 
@@ -293,7 +293,10 @@ async def _run_generation(
             await notify(message="根据您的偏好调整创意方案...")
             brief = await director_service.edit_brief(brief, preferences)
 
-        max_fix_rounds = max(settings.max_fix_rounds, 1)
+        # `MAX_FIX_ROUNDS` is the number of allowed repair attempts after the
+        # initial render, so quality checks must run one extra time.
+        max_fix_rounds = max(settings.max_fix_rounds, 0)
+        evaluation_rounds = max_fix_rounds + 1
         variants = get_variants(brief, count=max(photos_per_package, 1))
 
         await notify(
@@ -333,6 +336,10 @@ async def _run_generation(
                     else:
                         img_bytes = await nano_banana_service.text_to_image(prompt=prompt)
                     break
+                except NanoRequestTooLargeError as exc:
+                    raise RuntimeError(
+                        "参考图请求体积仍然过大，请保留清晰近照，避免超大原图后重试"
+                    ) from exc
                 except Exception:
                     logger.warning(
                         "Generation attempt %d failed for user %s photo %d",
@@ -356,7 +363,7 @@ async def _run_generation(
 
             brief_summary = f"{brief.story} {brief.emotion}"
             photo_score = 0.0
-            for fix_round in range(max_fix_rounds):
+            for fix_round in range(evaluation_rounds):
                 report, _ = await vlm_checker_service.check_and_suggest_fix_prompt(
                     image_data=img_bytes,
                     original_prompt=prompt,
@@ -381,7 +388,7 @@ async def _run_generation(
                     brief_alignment=report.brief_alignment,
                     aesthetic_score=report.aesthetic_score,
                     fix_round=fix_round,
-                    max_rounds=max_fix_rounds,
+                    max_rounds=evaluation_rounds,
                 )
 
                 logger.info(
@@ -419,6 +426,10 @@ async def _run_generation(
                             )
                         else:
                             img_bytes = await nano_banana_service.text_to_image(prompt=prompt)
+                    except NanoRequestTooLargeError as exc:
+                        raise RuntimeError(
+                            "参考图请求体积仍然过大，请保留清晰近照，避免超大原图后重试"
+                        ) from exc
                     except Exception:
                         logger.warning("Regeneration failed for photo %d", index + 1)
                         break

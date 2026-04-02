@@ -123,12 +123,27 @@ class FileInfo(BaseModel):
     id: str = Field(..., description="文件唯一标识")
     filename: str = Field(..., description="原始文件名")
     url: str = Field(..., description="访问地址")
+    role: str = Field("", description="角色标签")
+    slot: str = Field("", description="固定坑位标识")
+
+
+class UploadValidationIssue(BaseModel):
+    level: str = Field(..., description="error 或 warning")
+    message: str = Field(..., description="面向用户的提示文案")
+    slot: str = Field("", description="关联的坑位标识")
+
+
+class UploadValidationSummary(BaseModel):
+    ok: bool = True
+    issues: list[UploadValidationIssue] = Field(default_factory=list)
+    summary: str = ""
 
 
 class UploadResponse(BaseModel):
     user_id: str
     session_token: str = ""
     files: list[FileInfo]
+    validation: UploadValidationSummary | None = None
 
 
 # ---- Makeup ----

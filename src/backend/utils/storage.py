@@ -8,6 +8,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import aiofiles
 
@@ -46,17 +47,56 @@ def upload_metadata_path(image_path: Path) -> Path:
     return image_path.with_suffix(image_path.suffix + ".meta.json")
 
 
+def read_upload_metadata(image_path: Path) -> dict[str, Any]:
+    """读取上传图片的 sidecar 元数据。"""
+    meta_path = upload_metadata_path(image_path)
+    if not meta_path.exists():
+        return {}
+
+    try:
+        return json.loads(meta_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        logger.warning("Failed to read upload metadata: %s", meta_path)
+        return {}
+
+
+def delete_uploads_for_slot(user_id: str, slot: str) -> None:
+    """删除同一坑位的历史上传，避免重复上传后引用到旧图。"""
+    if not slot:
+        return
+
+    upload_dir = user_upload_dir(user_id)
+    for image_path in upload_dir.iterdir():
+        if not image_path.is_file() or image_path.name.endswith(".meta.json"):
+            continue
+
+        metadata = read_upload_metadata(image_path)
+        if str(metadata.get("slot", "")).strip().lower() != slot:
+            continue
+
+        meta_path = upload_metadata_path(image_path)
+        try:
+            image_path.unlink(missing_ok=True)
+            meta_path.unlink(missing_ok=True)
+        except OSError:
+            logger.warning("Failed to delete previous upload for slot %s: %s", slot, image_path)
+
+
 async def save_upload_file(
     user_id: str,
     filename: str,
     content: bytes,
     role: str | None = None,
+    slot: str | None = None,
+    validation: dict[str, Any] | None = None,
 ) -> tuple[str, Path]:
     """
     保存上传文件，返回 (file_id, 完整路径)。
     """
     file_id = generate_file_id()
     ext = Path(filename).suffix.lower() or ".jpg"
+    if slot:
+        delete_uploads_for_slot(user_id, slot)
     dest = user_upload_dir(user_id) / f"{file_id}{ext}"
     async with aiofiles.open(dest, "wb") as f:
         await f.write(content)
@@ -65,6 +105,9 @@ async def save_upload_file(
     metadata = {
         "original_filename": filename,
         "role": role or "",
+        "slot": slot or "",
+        "validation": validation or {},
+        "saved_at": int(time.time()),
     }
     meta_dest = upload_metadata_path(dest)
     async with aiofiles.open(meta_dest, "w", encoding="utf-8") as f:

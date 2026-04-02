@@ -1,5 +1,5 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
@@ -136,7 +136,7 @@
           "fill": {
             "type": "image",
             "enabled": true,
-            "url": "./images/generated-1773678399461.png",
+            "url": "./images/generated-1774933069783.png",
             "mode": "fill"
           },
           "layout": "none",
@@ -450,7 +450,7 @@
                       "fill": "$--text-secondary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "男女双方各上传5张清晰日常照片，系统自动提取面部特征",
+                      "content": "新郎新娘各传正脸半身与全身，若有双人合照再补 1 张，系统会先做预检。",
                       "lineHeight": 1.7,
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -825,7 +825,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "./images/generated-1773678492426.png",
+                        "url": "./images/generated-1774933101883.png",
                         "mode": "fill"
                       },
                       "layout": "none"
@@ -849,6 +849,7 @@
                           "content": "极简高定棚拍",
                           "fontFamily": "Inter",
                           "fontSize": 18,
+                          "fontWeight": "normal",
                           "letterSpacing": 1
                         },
                         {
@@ -884,7 +885,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "./images/generated-1773678527070.png",
+                        "url": "./images/generated-1774933135166.png",
                         "mode": "fill"
                       },
                       "layout": "none"
@@ -908,6 +909,7 @@
                           "content": "冰岛黑沙滩史诗",
                           "fontFamily": "Inter",
                           "fontSize": 18,
+                          "fontWeight": "normal",
                           "letterSpacing": 1
                         },
                         {
@@ -1014,7 +1016,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "./images/generated-1773678545362.png",
+                        "url": "./images/generated-1774933595751.png",
                         "mode": "fill"
                       },
                       "layout": "none"
@@ -1038,6 +1040,7 @@
                           "content": "极简高定棚拍",
                           "fontFamily": "Inter",
                           "fontSize": 18,
+                          "fontWeight": "normal",
                           "letterSpacing": 1
                         },
                         {
@@ -1073,7 +1076,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "./images/generated-1773678585370.png",
+                        "url": "./images/generated-1774933622985.png",
                         "mode": "fill"
                       },
                       "layout": "none"
@@ -1097,6 +1100,7 @@
                           "content": "冰岛黑沙滩史诗",
                           "fontFamily": "Inter",
                           "fontSize": 18,
+                          "fontWeight": "normal",
                           "letterSpacing": 1
                         },
                         {
@@ -1127,12 +1131,18 @@
                       "type": "frame",
                       "id": "ORXS5",
                       "name": "Card Image 2",
+                      "metadata": {
+                        "type": "unsplash",
+                        "username": "hoianphotographer",
+                        "link": "https://unsplash.com/@hoianphotographer",
+                        "author": "Hoi An and Da Nang Photographer"
+                      },
                       "width": "fill_container",
                       "height": 280,
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "./images/generated-1773761406546.png",
+                        "url": "./images/generated-1774966534492-fixed.png",
                         "mode": "fill"
                       },
                       "layout": "none"
@@ -1153,16 +1163,17 @@
                           "type": "text",
                           "id": "jqkSJ",
                           "fill": "$--text-primary",
-                          "content": "日系温泉旅拍",
+                          "content": "东方庭院鎏金",
                           "fontFamily": "Inter",
                           "fontSize": 18,
+                          "fontWeight": "normal",
                           "letterSpacing": 1
                         },
                         {
                           "type": "text",
                           "id": "4unBY",
                           "fill": "$--text-muted",
-                          "content": "温泉和风 · 清新治愈 · 20张精修",
+                          "content": "庭院灯影 · 新中式礼服 · 20张精修",
                           "fontFamily": "Inter",
                           "fontSize": 13,
                           "fontWeight": "300",
@@ -1195,12 +1206,18 @@
                       "type": "frame",
                       "id": "kyDh0",
                       "name": "Card Image 3",
+                      "metadata": {
+                        "type": "unsplash",
+                        "username": "flo_raw",
+                        "link": "https://unsplash.com/@flo_raw",
+                        "author": "Florian Schindler"
+                      },
                       "width": "fill_container",
                       "height": 280,
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "./images/generated-1773678610353.png",
+                        "url": "./images/package-french.png",
                         "mode": "fill"
                       },
                       "layout": "none"
@@ -1221,16 +1238,17 @@
                           "type": "text",
                           "id": "TeJla",
                           "fill": "$--text-primary",
-                          "content": "中式赛博朋克",
+                          "content": "法式街角胶片",
                           "fontFamily": "Inter",
                           "fontSize": 18,
+                          "fontWeight": "normal",
                           "letterSpacing": 1
                         },
                         {
                           "type": "text",
                           "id": "Esoqs",
                           "fill": "$--text-muted",
-                          "content": "霓虹国潮 · 未来东方 · 20张精修",
+                          "content": "复古街拍 · 胶片质感 · 20张精修",
                           "fontFamily": "Inter",
                           "fontSize": 13,
                           "fontWeight": "300",
@@ -1259,7 +1277,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "./images/generated-1773678632534.png",
+                        "url": "./images/generated-1773760935669.png",
                         "mode": "fill"
                       },
                       "layout": "none"
@@ -1280,16 +1298,17 @@
                           "type": "text",
                           "id": "SK5qY",
                           "fill": "$--text-primary",
-                          "content": "法式街角胶片",
+                          "content": "晨光花园誓约",
                           "fontFamily": "Inter",
                           "fontSize": 18,
+                          "fontWeight": "normal",
                           "letterSpacing": 1
                         },
                         {
                           "type": "text",
                           "id": "6irOd",
                           "fill": "$--text-muted",
-                          "content": "复古胶片 · 浪漫街拍 · 20张精修",
+                          "content": "花园晨光 · 自然亲密 · 20张精修",
                           "fontFamily": "Inter",
                           "fontSize": 13,
                           "fontWeight": "300",
@@ -1318,7 +1337,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "./images/generated-1773761362241.png",
+                        "url": "./images/generated-1773760974366.png",
                         "mode": "fill"
                       },
                       "layout": "none"
@@ -1339,16 +1358,17 @@
                           "type": "text",
                           "id": "IZg6s",
                           "fill": "$--text-primary",
-                          "content": "星空露营婚纱",
+                          "content": "旷野夕光誓约",
                           "fontFamily": "Inter",
                           "fontSize": 18,
+                          "fontWeight": "normal",
                           "letterSpacing": 1
                         },
                         {
                           "type": "text",
                           "id": "gpR8l",
                           "fill": "$--text-muted",
-                          "content": "星河璀璨 · 浪漫野奢 · 20张精修",
+                          "content": "日落草坪 · 轻野浪漫 · 20张精修",
                           "fontFamily": "Inter",
                           "fontSize": 13,
                           "fontWeight": "300",
@@ -2984,317 +3004,1702 @@
         },
         {
           "type": "frame",
-          "id": "7tXJo",
+          "id": "iaRv7",
           "name": "upload_main",
-          "width": "fill_container",
-          "layout": "vertical",
-          "gap": 56,
-          "padding": [
-            60,
-            140
-          ],
-          "alignItems": "center",
+          "width": 1440,
+          "height": 2380,
+          "layout": "none",
           "children": [
             {
               "type": "frame",
-              "id": "WGMiL",
-              "name": "upload_title",
-              "layout": "vertical",
-              "gap": 12,
-              "alignItems": "center",
+              "id": "HZiYI",
+              "x": 60,
+              "y": 52,
+              "name": "upload_title_v2",
+              "width": 920,
+              "height": 154,
+              "layout": "none",
               "children": [
                 {
-                  "type": "text",
-                  "id": "Td73q",
-                  "name": "ut1",
-                  "fill": "$--text-primary",
-                  "content": "欢迎来到您的私人数字影棚",
-                  "textAlign": "center",
-                  "fontFamily": "Inter",
-                  "fontSize": 36,
-                  "fontWeight": "200",
-                  "letterSpacing": 4
+                  "type": "frame",
+                  "id": "oTQmU",
+                  "x": 0,
+                  "y": 0,
+                  "name": "upload_title_badge",
+                  "fill": "#1A1816",
+                  "cornerRadius": 999,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#8A7548"
+                  },
+                  "gap": 8,
+                  "padding": [
+                    7,
+                    14
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "GTS1F",
+                      "name": "upload_title_badge_text",
+                      "fill": "#C9A96E",
+                      "content": "建立档案",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600",
+                      "letterSpacing": 3
+                    }
+                  ]
                 },
                 {
                   "type": "text",
-                  "id": "0flt3",
-                  "name": "ut2",
-                  "fill": "$--text-muted",
-                  "content": "请分别上传男女双方各5-10张高清日常照片",
-                  "textAlign": "center",
+                  "id": "Vib7z",
+                  "x": 0,
+                  "y": 44,
+                  "name": "upload_title_heading",
+                  "fill": "#F5F0EB",
+                  "textGrowth": "fixed-width",
+                  "width": 920,
+                  "content": "先把你们的 5 张原图摆对",
+                  "lineHeight": 1.16,
+                  "fontFamily": "Inter",
+                  "fontSize": 48,
+                  "fontWeight": "200",
+                  "letterSpacing": 5
+                },
+                {
+                  "type": "text",
+                  "id": "71efW",
+                  "x": 0,
+                  "y": 114,
+                  "name": "upload_title_body",
+                  "fill": "#9A9490",
+                  "textGrowth": "fixed-width",
+                  "width": 860,
+                  "content": "先上传 5 张原图：新郎半身 / 全身、新娘半身 / 全身、双人全身合照。示意图只看取景与比例，��式流程支持点开看原图。",
+                  "lineHeight": 1.85,
                   "fontFamily": "Inter",
                   "fontSize": 15,
                   "fontWeight": "300",
-                  "letterSpacing": 0.5
+                  "letterSpacing": 0.4
                 }
               ]
             },
             {
               "type": "frame",
-              "id": "qsXW5",
-              "name": "upload_cards",
-              "width": "fill_container",
-              "gap": 32,
+              "id": "GMsLp",
+              "x": 60,
+              "y": 236,
+              "name": "upload_brief_v2",
+              "width": 1320,
+              "height": 286,
+              "fill": "#141210",
+              "cornerRadius": 28,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#8A7548"
+              },
+              "layout": "none",
               "children": [
                 {
+                  "type": "text",
+                  "id": "QdYIX",
+                  "x": 32,
+                  "y": 28,
+                  "name": "upload_brief_eyebrow",
+                  "fill": "#C9A96E",
+                  "content": "当前标准",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "letterSpacing": 5
+                },
+                {
+                  "type": "text",
+                  "id": "FusUV",
+                  "x": 32,
+                  "y": 54,
+                  "name": "upload_brief_title",
+                  "fill": "#F5F0EB",
+                  "textGrowth": "fixed-width",
+                  "width": 720,
+                  "content": "5 张标准采集，双人合照并入必传",
+                  "lineHeight": 1.2,
+                  "fontFamily": "Inter",
+                  "fontSize": 30,
+                  "fontWeight": "300",
+                  "letterSpacing": 3
+                },
+                {
+                  "type": "text",
+                  "id": "T9XuS",
+                  "x": 32,
+                  "y": 118,
+                  "name": "upload_brief_copy",
+                  "fill": "#9A9490",
+                  "textGrowth": "fixed-width",
+                  "width": 720,
+                  "content": "两人各 2 张负责保五官与体态，双人全身合照负责稳住身高差、站姿和同框比例；前后端都按 5 张标准采集执行。",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "300",
+                  "letterSpacing": 0.3
+                },
+                {
                   "type": "frame",
-                  "id": "YxjBu",
-                  "name": "upload_male",
-                  "width": "fill_container",
-                  "fill": "$--bg-surface",
+                  "id": "PVNI8",
+                  "x": 864,
+                  "y": 28,
+                  "name": "upload_meta_min",
+                  "width": 424,
+                  "fill": "#1A1816",
                   "cornerRadius": 16,
                   "stroke": {
                     "thickness": 1,
-                    "fill": "$--border-subtle"
+                    "fill": "#2A2725"
                   },
-                  "layout": "vertical",
-                  "gap": 28,
-                  "padding": 44,
+                  "gap": 16,
+                  "padding": [
+                    12,
+                    14
+                  ],
+                  "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "Lzctg",
-                      "name": "male_label",
-                      "gap": 10,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon_font",
-                          "id": "MEx3x",
-                          "name": "mlicon",
-                          "width": 20,
-                          "height": 20,
-                          "iconFontName": "user",
-                          "iconFontFamily": "lucide",
-                          "fill": "$--accent-gold"
-                        },
-                        {
-                          "type": "text",
-                          "id": "6XtBn",
-                          "name": "mltxt",
-                          "fill": "$--text-primary",
-                          "content": "新郎",
-                          "fontFamily": "Inter",
-                          "fontSize": 18,
-                          "fontWeight": "300",
-                          "letterSpacing": 1.5
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "1SEcg",
-                      "name": "male_dropzone",
-                      "width": "fill_container",
-                      "height": 280,
-                      "cornerRadius": 12,
-                      "stroke": {
-                        "thickness": 1,
-                        "fill": "$--border-subtle"
-                      },
-                      "layout": "vertical",
-                      "gap": 16,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon_font",
-                          "id": "Gis2x",
-                          "name": "mdicon",
-                          "width": 48,
-                          "height": 48,
-                          "iconFontName": "cloud-upload",
-                          "iconFontFamily": "lucide",
-                          "fill": "$--text-muted"
-                        },
-                        {
-                          "type": "text",
-                          "id": "ZHYmF",
-                          "name": "mdtxt",
-                          "fill": "$--text-muted",
-                          "content": "拖拽照片到这里\n或点击上传",
-                          "lineHeight": 1.8,
-                          "textAlign": "center",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "300",
-                          "letterSpacing": 0.3
-                        },
-                        {
-                          "type": "frame",
-                          "id": "fUnsl",
-                          "name": "male_upload_btn",
-                          "cornerRadius": 100,
-                          "stroke": {
-                            "thickness": 1,
-                            "fill": "$--accent-gold"
-                          },
-                          "padding": [
-                            10,
-                            28
-                          ],
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "oMpDU",
-                              "name": "mdbtnt",
-                              "fill": "$--accent-gold",
-                              "content": "选择文件",
-                              "fontFamily": "Inter",
-                              "fontSize": 13,
-                              "fontWeight": "500",
-                              "letterSpacing": 2
-                            }
-                          ]
-                        }
-                      ]
+                      "type": "text",
+                      "id": "4n2uj",
+                      "name": "upload_meta_min_label",
+                      "fill": "#F5F0EB",
+                      "content": "当前采集",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500",
+                      "letterSpacing": 1.5
                     },
                     {
                       "type": "text",
-                      "id": "ZxPnU",
-                      "name": "mhint",
-                      "fill": "$--text-muted",
-                      "content": "支持 JPG/PNG，单张不超过 10MB\n建议上传正面、侧面、全身等不同角度",
-                      "lineHeight": 1.8,
-                      "textAlign": "center",
+                      "id": "deVme",
+                      "name": "upload_meta_min_value",
+                      "fill": "#C9A96E",
+                      "content": "5 张必传",
                       "fontFamily": "Inter",
                       "fontSize": 12,
-                      "fontWeight": "300",
-                      "letterSpacing": 0.3
+                      "fontWeight": "600",
+                      "letterSpacing": 1.5
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "4vh8B",
-                  "name": "upload_female",
-                  "width": "fill_container",
-                  "fill": "$--bg-surface",
+                  "id": "tvKCQ",
+                  "x": 864,
+                  "y": 82,
+                  "name": "upload_meta_plus",
+                  "width": 424,
+                  "fill": "#1A1816",
                   "cornerRadius": 16,
                   "stroke": {
                     "thickness": 1,
-                    "fill": "$--border-subtle"
+                    "fill": "#2A2725"
                   },
-                  "layout": "vertical",
-                  "gap": 28,
-                  "padding": 44,
+                  "gap": 16,
+                  "padding": [
+                    12,
+                    14
+                  ],
+                  "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "text",
+                      "id": "3YFGp",
+                      "name": "upload_meta_plus_label",
+                      "fill": "#F5F0EB",
+                      "content": "比例锚点",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500",
+                      "letterSpacing": 1.5
+                    },
+                    {
+                      "type": "text",
+                      "id": "rcihv",
+                      "name": "upload_meta_plus_value",
+                      "fill": "#C9A96E",
+                      "content": "双人全身合照",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "600",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yty3O",
+                  "x": 864,
+                  "y": 136,
+                  "name": "upload_meta_ethnicity",
+                  "width": 424,
+                  "fill": "#1A1816",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "gap": 16,
+                  "padding": [
+                    12,
+                    14
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "S8RYs",
+                      "name": "upload_meta_ethnicity_label",
+                      "fill": "#F5F0EB",
+                      "content": "预览方式",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500",
+                      "letterSpacing": 1.5
+                    },
+                    {
+                      "type": "text",
+                      "id": "Mj3qA",
+                      "name": "upload_meta_ethnicity_value",
+                      "fill": "#C9A96E",
+                      "content": "支持看原图",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "600",
+                      "letterSpacing": 1.5
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "k5ZOv",
+                  "x": 32,
+                  "y": 210,
+                  "name": "upload_point_1",
+                  "width": 404,
+                  "fill": "#1A1816",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "gap": 12,
+                  "padding": [
+                    14,
+                    16
+                  ],
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "43f3r",
+                      "name": "upload_point_1_icon",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "image-plus",
+                      "iconFontFamily": "lucide",
+                      "fill": "#C9A96E"
+                    },
+                    {
+                      "type": "text",
+                      "id": "07pBB",
+                      "name": "upload_point_1_text",
+                      "fill": "#D7D1CC",
+                      "textGrowth": "fixed-width",
+                      "width": 340,
+                      "content": "示意图只看取景，不看示例人物",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "2tgPm",
+                  "x": 458,
+                  "y": 210,
+                  "name": "upload_point_2",
+                  "width": 404,
+                  "fill": "#1A1816",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "gap": 12,
+                  "padding": [
+                    14,
+                    16
+                  ],
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "TskzS",
+                      "name": "upload_point_2_icon",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "scan-search",
+                      "iconFontFamily": "lucide",
+                      "fill": "#C9A96E"
+                    },
+                    {
+                      "type": "text",
+                      "id": "JNHjI",
+                      "name": "upload_point_2_text",
+                      "fill": "#D7D1CC",
+                      "textGrowth": "fixed-width",
+                      "width": 340,
+                      "content": "上传后展示你们的原图预览，可点开看全图",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gCowZ",
+                  "x": 884,
+                  "y": 210,
+                  "name": "upload_point_3",
+                  "width": 404,
+                  "fill": "#1A1816",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "gap": 12,
+                  "padding": [
+                    14,
+                    16
+                  ],
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "9Vjkq",
+                      "name": "upload_point_3_icon",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "sparkles",
+                      "iconFontFamily": "lucide",
+                      "fill": "#C9A96E"
+                    },
+                    {
+                      "type": "text",
+                      "id": "zBfOx",
+                      "name": "upload_point_3_text",
+                      "fill": "#D7D1CC",
+                      "textGrowth": "fixed-width",
+                      "width": 340,
+                      "content": "系统优先判断角度、遮挡、同框和比例",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.2
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "UdaIC",
+                  "x": 32,
+                  "y": 252,
+                  "name": "upload_brief_left_note",
+                  "fill": "#6B6560",
+                  "content": "半身看脸，全身看头脚，合照看两人比例。",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "letterSpacing": 1.2
+                },
+                {
+                  "type": "text",
+                  "id": "bhrtM",
+                  "x": 1114,
+                  "y": 252,
+                  "name": "upload_brief_right_note",
+                  "fill": "#6B6560",
+                  "content": "满 5 张后进入 AI 试妆。",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "letterSpacing": 1.2
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ZU53n",
+              "x": 60,
+              "y": 560,
+              "name": "upload_couple_section",
+              "width": 1320,
+              "height": 382,
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Qne4t",
+                  "x": 26,
+                  "y": 24,
+                  "name": "upload_couple_role",
+                  "fill": "#25211E",
+                  "cornerRadius": 999,
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "1XeVv",
+                      "name": "upload_couple_role_text",
+                      "fill": "#F5F0EB",
+                      "content": "必传",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600",
+                      "letterSpacing": 1.4
+                    }
+                  ]
+                },
+                {
+                  "type": "icon_font",
+                  "id": "xbdil",
+                  "x": 102,
+                  "y": 29,
+                  "name": "upload_couple_icon",
+                  "width": 18,
+                  "height": 18,
+                  "iconFontName": "heart-handshake",
+                  "iconFontFamily": "lucide",
+                  "fill": "#C9A96E"
+                },
+                {
+                  "type": "text",
+                  "id": "O5xbj",
+                  "x": 126,
+                  "y": 22,
+                  "name": "upload_couple_title",
+                  "fill": "#F5F0EB",
+                  "content": "双人全身合照",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "300",
+                  "letterSpacing": 2
+                },
+                {
+                  "type": "frame",
+                  "id": "e7tkZ",
+                  "x": 1180,
+                  "y": 22,
+                  "name": "upload_couple_badge",
+                  "fill": "#141210",
+                  "cornerRadius": 999,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "padding": [
+                    6,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "jL3j1",
+                      "name": "upload_couple_badge_text",
+                      "fill": "#C9A96E",
+                      "content": "比例锚点",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "7IbJ9",
+                  "x": 26,
+                  "y": 74,
+                  "name": "upload_ref_couple_full",
+                  "width": 872,
+                  "height": 230,
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "./images/generated-1774932787165.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
                       "type": "frame",
-                      "id": "Q7LOt",
-                      "name": "female_label",
-                      "gap": 10,
-                      "alignItems": "center",
+                      "id": "9dAzU",
+                      "x": 14,
+                      "y": 14,
+                      "name": "upload_ref_couple_chip",
+                      "fill": "#0A0A0ACC",
+                      "cornerRadius": 999,
+                      "padding": [
+                        7,
+                        12
+                      ],
                       "children": [
                         {
-                          "type": "icon_font",
-                          "id": "9pFFI",
-                          "name": "flicon",
-                          "width": 20,
-                          "height": 20,
-                          "iconFontName": "user",
-                          "iconFontFamily": "lucide",
-                          "fill": "$--accent-gold"
-                        },
-                        {
                           "type": "text",
-                          "id": "40xz0",
-                          "name": "fltxt",
-                          "fill": "$--text-primary",
-                          "content": "新娘",
+                          "id": "PpZ5L",
+                          "name": "upload_ref_couple_chip_text",
+                          "fill": "#F5F0EB",
+                          "content": "参考取景：双人全身，可点开看原图",
                           "fontFamily": "Inter",
-                          "fontSize": 18,
-                          "fontWeight": "300",
-                          "letterSpacing": 1.5
+                          "fontSize": 11,
+                          "fontWeight": "500",
+                          "letterSpacing": 1.1
                         }
                       ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "NIOnm",
+                  "x": 920,
+                  "y": 74,
+                  "name": "upload_couple_dropzone",
+                  "width": 374,
+                  "height": 230,
+                  "fill": "#141210",
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#8A7548"
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "O3Ay8",
+                      "x": 170,
+                      "y": 44,
+                      "name": "upload_couple_drop_icon",
+                      "width": 34,
+                      "height": 34,
+                      "iconFontName": "cloud-upload",
+                      "iconFontFamily": "lucide",
+                      "fill": "#6B6560"
+                    },
+                    {
+                      "type": "text",
+                      "id": "9jrcs",
+                      "x": 72,
+                      "y": 92,
+                      "name": "upload_couple_drop_text",
+                      "fill": "#9A9490",
+                      "textGrowth": "fixed-width",
+                      "width": 230,
+                      "content": "上传后这��展示你��的原图预览\n支持点开查看完整比例",
+                      "lineHeight": 1.8,
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.2
                     },
                     {
                       "type": "frame",
-                      "id": "yWh5c",
-                      "name": "female_dropzone",
-                      "width": "fill_container",
-                      "height": 280,
-                      "cornerRadius": 12,
+                      "id": "ytvbW",
+                      "x": 131,
+                      "y": 156,
+                      "name": "upload_couple_button",
+                      "cornerRadius": 999,
                       "stroke": {
                         "thickness": 1,
-                        "fill": "$--border-subtle"
+                        "fill": "#C9A96E"
                       },
-                      "layout": "vertical",
-                      "gap": 16,
-                      "justifyContent": "center",
-                      "alignItems": "center",
+                      "padding": [
+                        11,
+                        24
+                      ],
                       "children": [
                         {
-                          "type": "icon_font",
-                          "id": "4xfIg",
-                          "name": "fdicon",
-                          "width": 48,
-                          "height": 48,
-                          "iconFontName": "cloud-upload",
-                          "iconFontFamily": "lucide",
-                          "fill": "$--text-muted"
-                        },
-                        {
                           "type": "text",
-                          "id": "XMRBZ",
-                          "name": "fdtxt",
-                          "fill": "$--text-muted",
-                          "content": "拖拽照片到这里\n或点击上传",
-                          "lineHeight": 1.8,
-                          "textAlign": "center",
+                          "id": "jDJSR",
+                          "name": "upload_couple_button_text",
+                          "fill": "#C9A96E",
+                          "content": "上传双人合照",
                           "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "300",
-                          "letterSpacing": 0.3
-                        },
-                        {
-                          "type": "frame",
-                          "id": "VlLC9",
-                          "name": "female_upload_btn",
-                          "cornerRadius": 100,
-                          "stroke": {
-                            "thickness": 1,
-                            "fill": "$--accent-gold"
-                          },
-                          "padding": [
-                            10,
-                            28
-                          ],
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "MZl6d",
-                              "name": "fdbtnt",
-                              "fill": "$--accent-gold",
-                              "content": "选择文件",
-                              "fontFamily": "Inter",
-                              "fontSize": 13,
-                              "fontWeight": "500",
-                              "letterSpacing": 2
-                            }
-                          ]
+                          "fontSize": 13,
+                          "fontWeight": "600",
+                          "letterSpacing": 1.1
                         }
                       ]
                     },
                     {
                       "type": "text",
-                      "id": "ylFGo",
-                      "name": "fhint",
-                      "fill": "$--text-muted",
-                      "content": "支持 JPG/PNG，单张不超过 10MB\n建议上传正面、侧面、全身等不同角度",
-                      "lineHeight": 1.8,
+                      "id": "phk1K",
+                      "x": 96,
+                      "y": 198,
+                      "name": "upload_couple_meta",
+                      "fill": "#6B6560",
+                      "content": "原图预览支持全图查看",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "letterSpacing": 0.8
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "in4JB",
+                  "x": 26,
+                  "y": 330,
+                  "name": "upload_couple_hint",
+                  "fill": "#6B6560",
+                  "textGrowth": "fixed-width",
+                  "width": 872,
+                  "content": "双人全身合照现在纳入标准采集，用来更稳地保住身高差、站姿和同框关系。",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "300",
+                  "letterSpacing": 0.2
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "MJSBu",
+              "x": 60,
+              "y": 978,
+              "name": "upload_required_head",
+              "width": 800,
+              "height": 58,
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "pI9ze",
+                  "x": 0,
+                  "y": 0,
+                  "name": "upload_required_head_title",
+                  "fill": "#F5F0EB",
+                  "content": "4 张必传",
+                  "fontFamily": "Inter",
+                  "fontSize": 28,
+                  "fontWeight": "300",
+                  "letterSpacing": 3
+                },
+                {
+                  "type": "text",
+                  "id": "tPXLz",
+                  "x": 0,
+                  "y": 36,
+                  "name": "upload_required_head_body",
+                  "fill": "#6B6560",
+                  "content": "半身看脸，全身看头脚；上传后可点开你们的原图看完整比例。",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "300",
+                  "letterSpacing": 0.3
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Z6rpa",
+              "x": 60,
+              "y": 1054,
+              "name": "upload_card_groom_portrait",
+              "width": 649,
+              "height": 486,
+              "fill": "#1A1816",
+              "cornerRadius": 24,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#2A2725"
+              },
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "EVSFL",
+                  "x": 20,
+                  "y": 20,
+                  "name": "upload_card_groom_portrait_role",
+                  "fill": "#25211E",
+                  "cornerRadius": 999,
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "OJdF8",
+                      "name": "upload_card_groom_portrait_role_text",
+                      "fill": "#F5F0EB",
+                      "content": "新郎",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600",
+                      "letterSpacing": 1.4
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "H2kJq",
+                  "x": 88,
+                  "y": 18,
+                  "name": "upload_card_groom_portrait_title",
+                  "fill": "#F5F0EB",
+                  "content": "正脸半身",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "300",
+                  "letterSpacing": 1.6
+                },
+                {
+                  "type": "frame",
+                  "id": "GM4C0",
+                  "x": 575,
+                  "y": 18,
+                  "name": "upload_card_groom_portrait_badge",
+                  "fill": "#2A2113",
+                  "cornerRadius": 999,
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "9NbKP",
+                      "name": "upload_card_groom_portrait_badge_text",
+                      "fill": "#C9A96E",
+                      "content": "必传",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "v0Cv2",
+                  "x": 20,
+                  "y": 62,
+                  "name": "upload_ref_groom_portrait",
+                  "width": 609,
+                  "height": 190,
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "./images/generated-1774932803406.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "co4i2",
+                      "x": 14,
+                      "y": 14,
+                      "name": "upload_ref_groom_portrait_chip",
+                      "fill": "#0A0A0ACC",
+                      "cornerRadius": 999,
+                      "padding": [
+                        7,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Ixqod",
+                          "name": "upload_ref_groom_portrait_chip_text",
+                          "fill": "#F5F0EB",
+                          "content": "参考取景：脸部清楚，可点开看原图",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "500",
+                          "letterSpacing": 1.1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "7hiFz",
+                  "x": 20,
+                  "y": 268,
+                  "name": "upload_card_groom_portrait_desc",
+                  "fill": "#9A9490",
+                  "content": "1 张。正脸或微侧，脸清楚。",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "300",
+                  "letterSpacing": 0.2
+                },
+                {
+                  "type": "frame",
+                  "id": "IUdbj",
+                  "x": 20,
+                  "y": 308,
+                  "name": "upload_card_groom_portrait_dropzone",
+                  "width": 609,
+                  "height": 124,
+                  "fill": "#141210",
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#8A7548"
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "Oa5yZ",
+                      "x": 290,
+                      "y": 20,
+                      "name": "upload_card_groom_portrait_drop_icon",
+                      "width": 28,
+                      "height": 28,
+                      "iconFontName": "cloud-upload",
+                      "iconFontFamily": "lucide",
+                      "fill": "#6B6560"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mcOmk",
+                      "x": 194,
+                      "y": 58,
+                      "name": "upload_card_groom_portrait_drop_text",
+                      "fill": "#9A9490",
+                      "textGrowth": "fixed-width",
+                      "width": 220,
+                      "content": "上传后这里显示你的原图预览\n支持点开看全图",
                       "textAlign": "center",
                       "fontFamily": "Inter",
-                      "fontSize": 12,
+                      "fontSize": 13,
                       "fontWeight": "300",
-                      "letterSpacing": 0.3
+                      "letterSpacing": 0.2
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "UAnbG",
+                  "x": 20,
+                  "y": 448,
+                  "name": "upload_card_groom_portrait_hint",
+                  "fill": "#6B6560",
+                  "textGrowth": "fixed-width",
+                  "width": 540,
+                  "content": "别戴墨镜口罩，脸部不要被头发大面积遮挡。",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "300",
+                  "letterSpacing": 0.2
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "wFYmS",
+              "x": 731,
+              "y": 1054,
+              "name": "upload_card_groom_full",
+              "width": 649,
+              "height": 486,
+              "fill": "#1A1816",
+              "cornerRadius": 24,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#2A2725"
+              },
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Zz4hY",
+                  "x": 20,
+                  "y": 20,
+                  "name": "upload_card_groom_full_role",
+                  "fill": "#25211E",
+                  "cornerRadius": 999,
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "FQ20d",
+                      "name": "upload_card_groom_full_role_text",
+                      "fill": "#F5F0EB",
+                      "content": "新郎",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600",
+                      "letterSpacing": 1.4
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "oD1Kl",
+                  "x": 88,
+                  "y": 18,
+                  "name": "upload_card_groom_full_title",
+                  "fill": "#F5F0EB",
+                  "content": "全身",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "300",
+                  "letterSpacing": 1.6
+                },
+                {
+                  "type": "frame",
+                  "id": "IYjWj",
+                  "x": 575,
+                  "y": 18,
+                  "name": "upload_card_groom_full_badge",
+                  "fill": "#2A2113",
+                  "cornerRadius": 999,
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Jh1k2",
+                      "name": "upload_card_groom_full_badge_text",
+                      "fill": "#C9A96E",
+                      "content": "必传",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "GPknL",
+                  "x": 20,
+                  "y": 62,
+                  "name": "upload_ref_groom_full",
+                  "width": 609,
+                  "height": 190,
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "./images/generated-1774932894609.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "5IHfR",
+                      "x": 14,
+                      "y": 14,
+                      "name": "upload_ref_groom_full_chip",
+                      "fill": "#0A0A0ACC",
+                      "cornerRadius": 999,
+                      "padding": [
+                        7,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "x0bxo",
+                          "name": "upload_ref_groom_full_chip_text",
+                          "fill": "#F5F0EB",
+                          "content": "参考取景：头脚完整，可点开看原图",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "500",
+                          "letterSpacing": 1.1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "NteVL",
+                  "x": 20,
+                  "y": 268,
+                  "name": "upload_card_groom_full_desc",
+                  "fill": "#9A9490",
+                  "content": "1 张。自然站立，头脚完整。",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "300",
+                  "letterSpacing": 0.2
+                },
+                {
+                  "type": "frame",
+                  "id": "JcDe9",
+                  "x": 20,
+                  "y": 308,
+                  "name": "upload_card_groom_full_dropzone",
+                  "width": 609,
+                  "height": 124,
+                  "fill": "#141210",
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#8A7548"
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "Lym0d",
+                      "x": 290,
+                      "y": 20,
+                      "name": "upload_card_groom_full_drop_icon",
+                      "width": 28,
+                      "height": 28,
+                      "iconFontName": "cloud-upload",
+                      "iconFontFamily": "lucide",
+                      "fill": "#6B6560"
+                    },
+                    {
+                      "type": "text",
+                      "id": "QB51a",
+                      "x": 194,
+                      "y": 58,
+                      "name": "upload_card_groom_full_drop_text",
+                      "fill": "#9A9490",
+                      "textGrowth": "fixed-width",
+                      "width": 220,
+                      "content": "上传后这里显示你的原图预览\n支持点开看完整比例",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.2
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "hCiDd",
+                  "x": 20,
+                  "y": 448,
+                  "name": "upload_card_groom_full_hint",
+                  "fill": "#6B6560",
+                  "textGrowth": "fixed-width",
+                  "width": 540,
+                  "content": "不要坐着，不要裁脚，人物主体要足够明显。",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "300",
+                  "letterSpacing": 0.2
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "fI4eZ",
+              "x": 60,
+              "y": 1564,
+              "name": "upload_card_bride_portrait",
+              "width": 649,
+              "height": 486,
+              "fill": "#1A1816",
+              "cornerRadius": 24,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#2A2725"
+              },
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "QjULm",
+                  "x": 20,
+                  "y": 20,
+                  "name": "upload_card_bride_portrait_role",
+                  "fill": "#25211E",
+                  "cornerRadius": 999,
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "2pA3o",
+                      "name": "upload_card_bride_portrait_role_text",
+                      "fill": "#F5F0EB",
+                      "content": "新娘",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600",
+                      "letterSpacing": 1.4
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "L68ZA",
+                  "x": 88,
+                  "y": 18,
+                  "name": "upload_card_bride_portrait_title",
+                  "fill": "#F5F0EB",
+                  "content": "正脸半身",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "300",
+                  "letterSpacing": 1.6
+                },
+                {
+                  "type": "frame",
+                  "id": "5r8cc",
+                  "x": 575,
+                  "y": 18,
+                  "name": "upload_card_bride_portrait_badge",
+                  "fill": "#2A2113",
+                  "cornerRadius": 999,
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "W5eD6",
+                      "name": "upload_card_bride_portrait_badge_text",
+                      "fill": "#C9A96E",
+                      "content": "必传",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ib8Ar",
+                  "x": 20,
+                  "y": 62,
+                  "name": "upload_ref_bride_portrait",
+                  "width": 609,
+                  "height": 190,
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "./images/generated-1774932925343.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "E9ukI",
+                      "x": 14,
+                      "y": 14,
+                      "name": "upload_ref_bride_portrait_chip",
+                      "fill": "#0A0A0ACC",
+                      "cornerRadius": 999,
+                      "padding": [
+                        7,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "R3Z4z",
+                          "name": "upload_ref_bride_portrait_chip_text",
+                          "fill": "#F5F0EB",
+                          "content": "参考取景：脸部清楚，可点开看原图",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "500",
+                          "letterSpacing": 1.1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "IId53",
+                  "x": 20,
+                  "y": 268,
+                  "name": "upload_card_bride_portrait_desc",
+                  "fill": "#9A9490",
+                  "content": "1 张。正脸或微侧，五官清楚。",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "300",
+                  "letterSpacing": 0.2
+                },
+                {
+                  "type": "frame",
+                  "id": "5IU8s",
+                  "x": 20,
+                  "y": 308,
+                  "name": "upload_card_bride_portrait_dropzone",
+                  "width": 609,
+                  "height": 124,
+                  "fill": "#141210",
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#8A7548"
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "1CUqK",
+                      "x": 290,
+                      "y": 20,
+                      "name": "upload_card_bride_portrait_drop_icon",
+                      "width": 28,
+                      "height": 28,
+                      "iconFontName": "cloud-upload",
+                      "iconFontFamily": "lucide",
+                      "fill": "#6B6560"
+                    },
+                    {
+                      "type": "text",
+                      "id": "XIqYp",
+                      "x": 194,
+                      "y": 58,
+                      "name": "upload_card_bride_portrait_drop_text",
+                      "fill": "#9A9490",
+                      "textGrowth": "fixed-width",
+                      "width": 220,
+                      "content": "上传后这里显示你的原图预览\n支持点开看全图",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.2
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Pxm1I",
+                  "x": 20,
+                  "y": 448,
+                  "name": "upload_card_bride_portrait_hint",
+                  "fill": "#6B6560",
+                  "textGrowth": "fixed-width",
+                  "width": 540,
+                  "content": "发型别挡脸，妆面越日常越好，避免重美颜。",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "300",
+                  "letterSpacing": 0.2
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "cUcdX",
+              "x": 731,
+              "y": 1564,
+              "name": "upload_card_bride_full",
+              "width": 649,
+              "height": 486,
+              "fill": "#1A1816",
+              "cornerRadius": 24,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#2A2725"
+              },
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "d0LYB",
+                  "x": 20,
+                  "y": 20,
+                  "name": "upload_card_bride_full_role",
+                  "fill": "#25211E",
+                  "cornerRadius": 999,
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "N0eWo",
+                      "name": "upload_card_bride_full_role_text",
+                      "fill": "#F5F0EB",
+                      "content": "新娘",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600",
+                      "letterSpacing": 1.4
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "96IXh",
+                  "x": 88,
+                  "y": 18,
+                  "name": "upload_card_bride_full_title",
+                  "fill": "#F5F0EB",
+                  "content": "全身",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "300",
+                  "letterSpacing": 1.6
+                },
+                {
+                  "type": "frame",
+                  "id": "n7MV5",
+                  "x": 575,
+                  "y": 18,
+                  "name": "upload_card_bride_full_badge",
+                  "fill": "#2A2113",
+                  "cornerRadius": 999,
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gKXSN",
+                      "name": "upload_card_bride_full_badge_text",
+                      "fill": "#C9A96E",
+                      "content": "必传",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "T1zlV",
+                  "x": 20,
+                  "y": 62,
+                  "name": "upload_ref_bride_full",
+                  "width": 609,
+                  "height": 190,
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "./images/generated-1774932954197.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "g6Dni",
+                      "x": 14,
+                      "y": 14,
+                      "name": "upload_ref_bride_full_chip",
+                      "fill": "#0A0A0ACC",
+                      "cornerRadius": 999,
+                      "padding": [
+                        7,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "lqw3l",
+                          "name": "upload_ref_bride_full_chip_text",
+                          "fill": "#F5F0EB",
+                          "content": "参考取景：头脚完整，可点开看原图",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "500",
+                          "letterSpacing": 1.1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "VPAtO",
+                  "x": 20,
+                  "y": 268,
+                  "name": "upload_card_bride_full_desc",
+                  "fill": "#9A9490",
+                  "content": "1 张。自然站立，头脚完整。",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "300",
+                  "letterSpacing": 0.2
+                },
+                {
+                  "type": "frame",
+                  "id": "TkYVO",
+                  "x": 20,
+                  "y": 308,
+                  "name": "upload_card_bride_full_dropzone",
+                  "width": 609,
+                  "height": 124,
+                  "fill": "#141210",
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#8A7548"
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "4xSA6",
+                      "x": 290,
+                      "y": 20,
+                      "name": "upload_card_bride_full_drop_icon",
+                      "width": 28,
+                      "height": 28,
+                      "iconFontName": "cloud-upload",
+                      "iconFontFamily": "lucide",
+                      "fill": "#6B6560"
+                    },
+                    {
+                      "type": "text",
+                      "id": "jWEGi",
+                      "x": 194,
+                      "y": 58,
+                      "name": "upload_card_bride_full_drop_text",
+                      "fill": "#9A9490",
+                      "textGrowth": "fixed-width",
+                      "width": 220,
+                      "content": "上传后这里显示你的原图预览\n支持点开看完整比例",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.2
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "KmF19",
+                  "x": 20,
+                  "y": 448,
+                  "name": "upload_card_bride_full_hint",
+                  "fill": "#6B6560",
+                  "textGrowth": "fixed-width",
+                  "width": 540,
+                  "content": "别裁脚，也不要被裙摆、栏杆或旁人遮住完整站姿。",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "300",
+                  "letterSpacing": 0.2
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Ogi15",
+              "x": 60,
+              "y": 2080,
+              "name": "upload_checklist",
+              "width": 1320,
+              "height": 82,
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "uTVtK",
+                  "x": 0,
+                  "y": 0,
+                  "name": "upload_check_1",
+                  "width": 428,
+                  "fill": "#1A1816",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "gap": 12,
+                  "padding": [
+                    16,
+                    18
+                  ],
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "Atlt9",
+                      "name": "upload_check_1_icon",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "check",
+                      "iconFontFamily": "lucide",
+                      "fill": "#C9A96E"
+                    },
+                    {
+                      "type": "text",
+                      "id": "tToO7",
+                      "name": "upload_check_1_text",
+                      "fill": "#D7D1CC",
+                      "textGrowth": "fixed-width",
+                      "width": 360,
+                      "content": "上传后直接显示你们的原图预览。",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "NxgXI",
+                  "x": 446,
+                  "y": 0,
+                  "name": "upload_check_2",
+                  "width": 428,
+                  "fill": "#1A1816",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "gap": 12,
+                  "padding": [
+                    16,
+                    18
+                  ],
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "URny2",
+                      "name": "upload_check_2_icon",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "check",
+                      "iconFontFamily": "lucide",
+                      "fill": "#C9A96E"
+                    },
+                    {
+                      "type": "text",
+                      "id": "rm9Pi",
+                      "name": "upload_check_2_text",
+                      "fill": "#D7D1CC",
+                      "textGrowth": "fixed-width",
+                      "width": 360,
+                      "content": "半身看脸，全身看头脚，合照看同框比例。",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "HONJi",
+                  "x": 892,
+                  "y": 0,
+                  "name": "upload_check_3",
+                  "width": 428,
+                  "fill": "#1A1816",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "gap": 12,
+                  "padding": [
+                    16,
+                    18
+                  ],
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "CFOuX",
+                      "name": "upload_check_3_icon",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "check",
+                      "iconFontFamily": "lucide",
+                      "fill": "#C9A96E"
+                    },
+                    {
+                      "type": "text",
+                      "id": "OkDcG",
+                      "name": "upload_check_3_text",
+                      "fill": "#D7D1CC",
+                      "textGrowth": "fixed-width",
+                      "width": 360,
+                      "content": "每张图都支持点开看原图，再决定要不要替换。",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.2
                     }
                   ]
                 }
@@ -3302,21 +4707,22 @@
             },
             {
               "type": "frame",
-              "id": "K8FWA",
+              "id": "J0ih8",
+              "x": 0,
+              "y": 2206,
               "name": "upload_bottom",
-              "width": "fill_container",
-              "padding": [
-                20,
-                0
-              ],
-              "justifyContent": "center",
+              "width": 1440,
+              "height": 72,
+              "layout": "none",
               "children": [
                 {
                   "type": "frame",
-                  "id": "n8L1t",
-                  "name": "upload_next_btn",
-                  "fill": "$--accent-gold",
-                  "cornerRadius": 100,
+                  "id": "bLeBu",
+                  "x": 553,
+                  "y": 0,
+                  "name": "upload_cta_button",
+                  "fill": "#C9A96E",
+                  "cornerRadius": 999,
                   "padding": [
                     18,
                     72
@@ -3326,14 +4732,14 @@
                   "children": [
                     {
                       "type": "text",
-                      "id": "MaYhN",
-                      "name": "unextt",
-                      "fill": "$--bg-primary",
+                      "id": "BEoI3",
+                      "name": "upload_cta_button_text",
+                      "fill": "#0A0A0A",
                       "content": "下一步：AI试妆",
                       "fontFamily": "Inter",
-                      "fontSize": 15,
-                      "fontWeight": "500",
-                      "letterSpacing": 3
+                      "fontSize": 16,
+                      "fontWeight": "600",
+                      "letterSpacing": 2
                     }
                   ]
                 }
@@ -3674,7 +5080,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "./images/generated-1773759812646.png",
+                            "url": "./images/generated-1774933377423.png",
                             "mode": "fill"
                           },
                           "cornerRadius": [
@@ -3707,6 +5113,7 @@
                               "content": "素颜质感",
                               "fontFamily": "Inter",
                               "fontSize": 16,
+                              "fontWeight": "normal",
                               "letterSpacing": 0.5
                             },
                             {
@@ -3770,7 +5177,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "./images/generated-1773759932888.png",
+                            "url": "./images/generated-1774933413850.png",
                             "mode": "fill"
                           },
                           "cornerRadius": [
@@ -3803,6 +5210,7 @@
                               "content": "精致新郎妆",
                               "fontFamily": "Inter",
                               "fontSize": 16,
+                              "fontWeight": "normal",
                               "letterSpacing": 0.5
                             },
                             {
@@ -3840,7 +5248,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "./images/generated-1773759970779.png",
+                            "url": "./images/generated-1774933440433.png",
                             "mode": "fill"
                           },
                           "cornerRadius": [
@@ -3873,6 +5281,7 @@
                               "content": "骨相微调",
                               "fontFamily": "Inter",
                               "fontSize": 16,
+                              "fontWeight": "normal",
                               "letterSpacing": 0.5
                             },
                             {
@@ -3959,7 +5368,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "./images/generated-1773760053899.png",
+                            "url": "./images/generated-1774933471650.png",
                             "mode": "fill"
                           },
                           "cornerRadius": [
@@ -3992,6 +5401,7 @@
                               "content": "素颜质感",
                               "fontFamily": "Inter",
                               "fontSize": 16,
+                              "fontWeight": "normal",
                               "letterSpacing": 0.5
                             },
                             {
@@ -4033,7 +5443,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "./images/generated-1773760091146.png",
+                            "url": "./images/generated-1774933500375.png",
                             "mode": "fill"
                           },
                           "cornerRadius": [
@@ -4066,6 +5476,7 @@
                               "content": "精致新娘妆",
                               "fontFamily": "Inter",
                               "fontSize": 16,
+                              "fontWeight": "normal",
                               "letterSpacing": 0.5
                             },
                             {
@@ -4129,7 +5540,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "./images/generated-1773760190993.png",
+                            "url": "./images/generated-1774933528944.png",
                             "mode": "fill"
                           },
                           "cornerRadius": [
@@ -4162,6 +5573,7 @@
                               "content": "骨相微调",
                               "fontFamily": "Inter",
                               "fontSize": 16,
+                              "fontWeight": "normal",
                               "letterSpacing": 0.5
                             },
                             {
@@ -4502,7 +5914,7 @@
                   "id": "P0G2h",
                   "name": "pt1",
                   "fill": "$--text-primary",
-                  "content": "选择您的视觉套餐",
+                  "content": "先定体系，再定服饰与场景",
                   "textAlign": "center",
                   "fontFamily": "Inter",
                   "fontSize": 32,
@@ -4514,7 +5926,7 @@
                   "id": "xSBRT",
                   "name": "pt2",
                   "fill": "$--text-muted",
-                  "content": "像刷小红书一样，找到属于你们的风格",
+                  "content": "先选婚礼语境，再筛服饰与取景，最后再看推荐样片",
                   "textAlign": "center",
                   "fontFamily": "Inter",
                   "fontSize": 15,
@@ -4548,7 +5960,7 @@
                       "id": "QyeNm",
                       "name": "tab1t",
                       "fill": "$--bg-primary",
-                      "content": "全部",
+                      "content": "中式",
                       "fontFamily": "Inter",
                       "fontSize": 13,
                       "fontWeight": "500",
@@ -4577,7 +5989,7 @@
                       "id": "WPCpS",
                       "name": "tab2t",
                       "fill": "$--text-muted",
-                      "content": "棚拍",
+                      "content": "西式",
                       "fontFamily": "Inter",
                       "fontSize": 13,
                       "fontWeight": "normal",
@@ -4635,7 +6047,7 @@
                       "id": "vv69c",
                       "name": "tab4t",
                       "fill": "$--text-muted",
-                      "content": "奇幻",
+                      "content": "夜景",
                       "fontFamily": "Inter",
                       "fontSize": 13,
                       "fontWeight": "normal",
@@ -4664,7 +6076,7 @@
                       "id": "Nm4Te",
                       "name": "tab5t",
                       "fill": "$--text-muted",
-                      "content": "中式",
+                      "content": "影棚",
                       "fontFamily": "Inter",
                       "fontSize": 13,
                       "fontWeight": "normal",
@@ -4693,11 +6105,164 @@
                       "id": "SnZoR",
                       "name": "tab6t",
                       "fill": "$--text-muted",
-                      "content": "胶片",
+                      "content": "幻境",
                       "fontFamily": "Inter",
                       "fontSize": 13,
                       "fontWeight": "normal",
                       "letterSpacing": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "dypK4",
+              "name": "panel",
+              "width": "fill_container",
+              "fill": "#141210",
+              "cornerRadius": 24,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#2A2725"
+              },
+              "layout": "vertical",
+              "gap": 14,
+              "padding": [
+                22,
+                24
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "yPQNn",
+                  "name": "panelTop",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "uvHrY",
+                      "fill": "#C9A96E",
+                      "content": "产品结构",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "600",
+                      "letterSpacing": 4
+                    },
+                    {
+                      "type": "text",
+                      "id": "e5Y5m",
+                      "fill": "#6B6560",
+                      "content": "体系 → 服饰 → 场景",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "300",
+                      "letterSpacing": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "3TT1V",
+                  "name": "stage1",
+                  "width": "fill_container",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "UPwfH",
+                      "fill": "#F5F0EB",
+                      "content": "服饰方向",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500",
+                      "letterSpacing": 1.2
+                    },
+                    {
+                      "type": "text",
+                      "id": "S5ASK",
+                      "fill": "#9A9490",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "旗袍 / 中山装 / 秀禾龙凤褂 / 古朝代 / 主纱 / 缎面礼服",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.3
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "oFKNU",
+                  "name": "stage2",
+                  "width": "fill_container",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "9jVRw",
+                      "fill": "#F5F0EB",
+                      "content": "场景取景",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500",
+                      "letterSpacing": 1.2
+                    },
+                    {
+                      "type": "text",
+                      "id": "J1qLO",
+                      "fill": "#9A9490",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "海边 / 草原 / 树林 / 古镇 / 城市夜景 / 影棚 / 雪境",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.3
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DEdni",
+                  "name": "summary",
+                  "width": "fill_container",
+                  "fill": "#1A1816",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#2A2725"
+                  },
+                  "gap": 24,
+                  "padding": [
+                    14,
+                    16
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "4QwQV",
+                      "fill": "#F5F0EB",
+                      "content": "当前推荐组合",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500",
+                      "letterSpacing": 1.2
+                    },
+                    {
+                      "type": "text",
+                      "id": "Kf48r",
+                      "fill": "#C9A96E",
+                      "content": "中式 · 旗袍 / 中山装 · 海边",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500",
+                      "letterSpacing": 0.5
                     }
                   ]
                 }
@@ -4736,7 +6301,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "./images/generated-1773760300940.png",
+                            "url": "./images/generated-1774933175666.png",
                             "mode": "fill"
                           },
                           "cornerRadius": [
@@ -4765,9 +6330,10 @@
                               "id": "2WcYt",
                               "name": "c1name",
                               "fill": "$--text-primary",
-                              "content": "极简高定棚拍",
+                              "content": "西式极简影棚",
                               "fontFamily": "Inter",
                               "fontSize": 16,
+                              "fontWeight": "normal",
                               "letterSpacing": 0.5
                             },
                             {
@@ -4775,7 +6341,7 @@
                               "id": "fALYF",
                               "name": "c1tag",
                               "fill": "$--text-muted",
-                              "content": "棚拍 · 极简 · 高级感",
+                              "content": "西式 · 主纱西装 · 影棚",
                               "fontFamily": "Inter",
                               "fontSize": 12,
                               "fontWeight": "300",
@@ -4803,7 +6369,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "./images/generated-1773760329336.png",
+                            "url": "./images/package-iceland.png",
                             "mode": "fill"
                           },
                           "cornerRadius": [
@@ -4832,9 +6398,10 @@
                               "id": "4enuG",
                               "name": "c2name",
                               "fill": "$--text-primary",
-                              "content": "冰岛黑沙滩史诗",
+                              "content": "海岸礁石誓约",
                               "fontFamily": "Inter",
                               "fontSize": 16,
+                              "fontWeight": "normal",
                               "letterSpacing": 0.5
                             },
                             {
@@ -4842,7 +6409,7 @@
                               "id": "qfWaF",
                               "name": "c2tag",
                               "fill": "$--text-muted",
-                              "content": "旅拍 · 史诗 · 大片感",
+                              "content": "海岸风景 · 西式礼服 · 海边",
                               "fontFamily": "Inter",
                               "fontSize": 12,
                               "fontWeight": "300",
@@ -4864,7 +6431,7 @@
                                   "id": "QmU4t",
                                   "name": "c2badget",
                                   "fill": "$--bg-primary",
-                                  "content": "热门",
+                                  "content": "推荐",
                                   "fontFamily": "Inter",
                                   "fontSize": 10,
                                   "fontWeight": "600",
@@ -4889,12 +6456,18 @@
                           "type": "frame",
                           "id": "zhurU",
                           "name": "c3_img",
+                          "metadata": {
+                            "type": "unsplash",
+                            "username": "flo_raw",
+                            "link": "https://unsplash.com/@flo_raw",
+                            "author": "Florian Schindler"
+                          },
                           "width": "fill_container",
                           "height": 260,
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "./images/generated-1773760370680.png",
+                            "url": "./images/package-french.png",
                             "mode": "fill"
                           },
                           "cornerRadius": [
@@ -4923,9 +6496,10 @@
                               "id": "zQMJ4",
                               "name": "c3name",
                               "fill": "$--text-primary",
-                              "content": "中式赛博朋克",
+                              "content": "法式街角胶片",
                               "fontFamily": "Inter",
                               "fontSize": 16,
+                              "fontWeight": "normal",
                               "letterSpacing": 0.5
                             },
                             {
@@ -4933,7 +6507,7 @@
                               "id": "oNhEC",
                               "name": "c3tag",
                               "fill": "$--text-muted",
-                              "content": "中式 · 赛博 · 未来感",
+                              "content": "街角漫步 · 胶片质感 · 法式旅拍",
                               "fontFamily": "Inter",
                               "fontSize": 12,
                               "fontWeight": "300",
@@ -4965,12 +6539,18 @@
                           "type": "frame",
                           "id": "BOFlU",
                           "name": "c4_img",
+                          "metadata": {
+                            "type": "unsplash",
+                            "username": "hoianphotographer",
+                            "link": "https://unsplash.com/@hoianphotographer",
+                            "author": "Hoi An and Da Nang Photographer"
+                          },
                           "width": "fill_container",
                           "height": 260,
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "./images/generated-1773760405653.png",
+                            "url": "./images/generated-1773760935669.png",
                             "mode": "fill"
                           },
                           "cornerRadius": [
@@ -4999,9 +6579,10 @@
                               "id": "9xSfp",
                               "name": "c4name",
                               "fill": "$--text-primary",
-                              "content": "法式街角胶片",
+                              "content": "晨光花园誓约",
                               "fontFamily": "Inter",
                               "fontSize": 16,
+                              "fontWeight": "normal",
                               "letterSpacing": 0.5
                             },
                             {
@@ -5009,7 +6590,7 @@
                               "id": "KznoX",
                               "name": "c4tag",
                               "fill": "$--text-muted",
-                              "content": "胶片 · 法式 · 浪漫",
+                              "content": "花园晨光 · 西式礼服 · 轻盈自然",
                               "fontFamily": "Inter",
                               "fontSize": 12,
                               "fontWeight": "300",
@@ -5032,12 +6613,18 @@
                           "type": "frame",
                           "id": "fKXFC",
                           "name": "c5_img",
+                          "metadata": {
+                            "type": "unsplash",
+                            "username": "thenowtime",
+                            "link": "https://unsplash.com/@thenowtime",
+                            "author": "The Now Time"
+                          },
                           "width": "fill_container",
                           "height": 260,
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "./images/generated-1773760433656.png",
+                            "url": "./images/generated-1773760974366.png",
                             "mode": "fill"
                           },
                           "cornerRadius": [
@@ -5066,9 +6653,10 @@
                               "id": "K3Bsw",
                               "name": "c5name",
                               "fill": "$--text-primary",
-                              "content": "极光星空梦境",
+                              "content": "旷野夕光誓约",
                               "fontFamily": "Inter",
                               "fontSize": 16,
+                              "fontWeight": "normal",
                               "letterSpacing": 0.5
                             },
                             {
@@ -5076,7 +6664,7 @@
                               "id": "ZHHj9",
                               "name": "c5tag",
                               "fill": "$--text-muted",
-                              "content": "奇幻 · 星空 · 梦幻",
+                              "content": "日落草坪 · 轻野浪漫 · 户外仪式",
                               "fontFamily": "Inter",
                               "fontSize": 12,
                               "fontWeight": "300",
@@ -5097,7 +6685,7 @@
                                   "id": "bMyqL",
                                   "name": "c5badget",
                                   "fill": "$--accent-gold",
-                                  "content": "SVIP",
+                                  "content": "定制",
                                   "fontFamily": "Inter",
                                   "fontSize": 10,
                                   "fontWeight": "600",
@@ -5122,12 +6710,18 @@
                           "type": "frame",
                           "id": "RlPfy",
                           "name": "c6_img",
+                          "metadata": {
+                            "type": "unsplash",
+                            "username": "hoianphotographer",
+                            "link": "https://unsplash.com/@hoianphotographer",
+                            "author": "Hoi An and Da Nang Photographer"
+                          },
                           "width": "fill_container",
                           "height": 260,
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "./images/generated-1773760464935.png",
+                            "url": "./images/generated-1774966617754-fixed.png",
                             "mode": "fill"
                           },
                           "cornerRadius": [
@@ -5156,9 +6750,10 @@
                               "id": "k3f7B",
                               "name": "c6name",
                               "fill": "$--text-primary",
-                              "content": "王家卫港风",
+                              "content": "东方庭院鎏金",
                               "fontFamily": "Inter",
                               "fontSize": 16,
+                              "fontWeight": "normal",
                               "letterSpacing": 0.5
                             },
                             {
@@ -5166,7 +6761,7 @@
                               "id": "QfxmJ",
                               "name": "c6tag",
                               "fill": "$--text-muted",
-                              "content": "胶片 · 港风 · 情绪感",
+                              "content": "东方庭院 · 新中式礼服 · 夜宴氛围",
                               "fontFamily": "Inter",
                               "fontSize": 12,
                               "fontWeight": "300",
@@ -5612,12 +7207,18 @@
               "type": "frame",
               "id": "XmzTQ",
               "name": "review_preview",
+              "metadata": {
+                "type": "unsplash",
+                "username": "deanbennett",
+                "link": "https://unsplash.com/@deanbennett",
+                "author": "Dean Bennett"
+              },
               "width": "fill_container",
               "height": "fill_container",
               "fill": {
                 "type": "image",
                 "enabled": true,
-                "url": "./images/generated-1773760511090.png",
+                "url": "./images/generated-1773761017022.png",
                 "mode": "fill"
               },
               "cornerRadius": 20,
@@ -5656,6 +7257,7 @@
                       "content": "该内容由 AI 生成",
                       "fontFamily": "Inter",
                       "fontSize": 11,
+                      "fontWeight": "normal",
                       "letterSpacing": 0.5
                     }
                   ]
@@ -5748,6 +7350,12 @@
                               "type": "frame",
                               "id": "aVuQy",
                               "name": "th1",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "al_kaium",
+                                "link": "https://unsplash.com/@al_kaium",
+                                "author": "AL Kaium"
+                              },
                               "width": 56,
                               "height": 56,
                               "fill": {
@@ -5762,6 +7370,12 @@
                               "type": "frame",
                               "id": "zoDqI",
                               "name": "th2",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "hoianphotographer",
+                                "link": "https://unsplash.com/@hoianphotographer",
+                                "author": "Hoi An and Da Nang Photographer"
+                              },
                               "width": 56,
                               "height": 56,
                               "fill": {
@@ -5776,6 +7390,12 @@
                               "type": "frame",
                               "id": "fn4VR",
                               "name": "th3",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "amen1941",
+                                "link": "https://unsplash.com/@amen1941",
+                                "author": "Amen Kingdom"
+                              },
                               "width": 56,
                               "height": 56,
                               "fill": {
@@ -5794,6 +7414,12 @@
                               "type": "frame",
                               "id": "jl0WC",
                               "name": "th4",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "palkers",
+                                "link": "https://unsplash.com/@palkers",
+                                "author": "Tri Palkers"
+                              },
                               "width": 56,
                               "height": 56,
                               "fill": {
@@ -5808,6 +7434,12 @@
                               "type": "frame",
                               "id": "oh6pG",
                               "name": "th5",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "hoianphotographer",
+                                "link": "https://unsplash.com/@hoianphotographer",
+                                "author": "Hoi An and Da Nang Photographer"
+                              },
                               "width": 56,
                               "height": 56,
                               "fill": {
@@ -5822,6 +7454,12 @@
                               "type": "frame",
                               "id": "svZfs",
                               "name": "th6",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "bayleejadegramling",
+                                "link": "https://unsplash.com/@bayleejadegramling",
+                                "author": "Baylee Gramling"
+                              },
                               "width": 56,
                               "height": 56,
                               "fill": {

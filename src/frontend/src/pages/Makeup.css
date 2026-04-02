@@ -113,12 +113,25 @@
 }
 
 .makeup-card__img {
-  height: 240px;
-  background: #1A1A1A center/cover no-repeat;
+  aspect-ratio: 4 / 5;
+  min-height: 320px;
+  padding: 14px 14px 0;
+  background:
+    radial-gradient(circle at top, rgba(201, 169, 110, 0.12), transparent 55%),
+    #121212;
   border-radius: 16px 16px 0 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+.makeup-card__img img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  object-position: center center;
 }
 
 .makeup-card--loading .makeup-card__img {
@@ -222,7 +235,7 @@
   .makeup-section { gap: 18px; }
   .makeup-section__header span { font-size: 16px; }
   .makeup-cards { flex-direction: column; gap: 16px; }
-  .makeup-card__img { height: 220px; }
+  .makeup-card__img { min-height: 260px; }
   .makeup-bottom { flex-direction: column; gap: 12px; width: 100%; }
   .makeup-bottom .btn { width: 100%; text-align: center; justify-content: center; }
   .makeup-page .btn--outline-light { padding: 14px 0; width: 100%; text-align: center; display: flex; justify-content: center; }

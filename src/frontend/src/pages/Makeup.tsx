@@ -41,12 +41,16 @@ const EMPTY_IMAGES: StyleImageState = {
   bride: [],
 }
 
+function hasCompleteImageSet(images: StyleImageState): boolean {
+  return images.groom.length === groomStyles.length && images.bride.length === brideStyles.length
+}
+
 async function requestMakeupPreview(
   userId: string,
   gender: 'male' | 'female',
 ): Promise<MakeupResponse> {
   const controller = new AbortController()
-  const timeoutId = window.setTimeout(() => controller.abort(), 20000)
+  const timeoutId = window.setTimeout(() => controller.abort(), 90000)
 
   try {
     return await apiRequest<MakeupResponse>('/api/makeup/generate', {
@@ -69,10 +73,13 @@ async function requestMakeupPreview(
 export default function Makeup() {
   const navigate = useNavigate()
   const workflow = getWorkflowState()
+  const storedImages = workflow.makeupOptions || EMPTY_IMAGES
+  const storedImagesKey = `${storedImages.groom.join('|')}::${storedImages.bride.join('|')}`
+  const hasStoredImages = hasCompleteImageSet(storedImages)
   const [groomStyle, setGroomStyle] = useState(workflow.selectedMakeup?.groom || 'natural')
   const [brideStyle, setBrideStyle] = useState(workflow.selectedMakeup?.bride || 'refined')
-  const [images, setImages] = useState<StyleImageState>(workflow.makeupOptions || EMPTY_IMAGES)
-  const [isLoading, setIsLoading] = useState(!workflow.makeupOptions)
+  const [images, setImages] = useState<StyleImageState>(storedImages)
+  const [isLoading, setIsLoading] = useState(!hasStoredImages)
   const [error, setError] = useState('')
   const [retryNonce, setRetryNonce] = useState(0)
 
@@ -84,15 +91,14 @@ export default function Makeup() {
       return
     }
 
-    if (workflow.makeupOptions) {
-      return
-    }
-
     let cancelled = false
     const userId = workflow.userId
+
     async function loadMakeupPreviews() {
-      setIsLoading(true)
       setError('')
+      if (!hasStoredImages) {
+        setIsLoading(true)
+      }
 
       try {
         const [groomResult, brideResult] = await Promise.allSettled([
@@ -105,22 +111,36 @@ export default function Makeup() {
         }
 
         const nextImages = {
-          groom: groomResult.status === 'fulfilled' ? groomResult.value.images : FALLBACK_IMAGES.groom,
-          bride: brideResult.status === 'fulfilled' ? brideResult.value.images : FALLBACK_IMAGES.bride,
+          groom:
+            groomResult.status === 'fulfilled'
+              ? groomResult.value.images
+              : hasStoredImages
+                ? storedImages.groom
+                : FALLBACK_IMAGES.groom,
+          bride:
+            brideResult.status === 'fulfilled'
+              ? brideResult.value.images
+              : hasStoredImages
+                ? storedImages.bride
+                : FALLBACK_IMAGES.bride,
         }
         setImages(nextImages)
         updateWorkflowState({
           makeupOptions: nextImages,
         })
         if (groomResult.status === 'rejected' || brideResult.status === 'rejected') {
-          setError('AI 试妆当前响应较慢，已切换为样片预览，不影响正式生成。')
+          setError(hasStoredImages ? '预览刷新失败，已保留当前效果。' : 'AI 试妆当前响应较慢，已切换为样片预览，不影响正式生成。')
         }
       } catch (loadError) {
         if (cancelled) {
           return
         }
-        setImages(FALLBACK_IMAGES)
-        setError(loadError instanceof Error ? `${loadError.message}，已切换为样片预览。` : '试妆生成失败，已切换为样片预览。')
+        if (hasStoredImages) {
+          setError(loadError instanceof Error ? `${loadError.message}，已保留当前预览。` : '试妆刷新失败，已保留当前预览。')
+        } else {
+          setImages(FALLBACK_IMAGES)
+          setError(loadError instanceof Error ? `${loadError.message}，已切换为样片预览。` : '试妆生成失败，已切换为样片预览。')
+        }
       } finally {
         if (!cancelled) {
           setIsLoading(false)
@@ -133,9 +153,9 @@ export default function Makeup() {
     return () => {
       cancelled = true
     }
-  }, [navigate, retryNonce, workflow.makeupOptions, workflow.uploadsComplete, workflow.userId])
+  }, [hasStoredImages, navigate, retryNonce, storedImagesKey, workflow.uploadsComplete, workflow.userId])
 
-  const isReady = images.groom.length === groomStyles.length && images.bride.length === brideStyles.length
+  const isReady = hasCompleteImageSet(images)
 
   const handleContinue = () => {
     updateWorkflowState({
@@ -197,11 +217,12 @@ export default function Makeup() {
                   onClick={() => setGroomStyle(style.id)}
                   disabled={!imageUrl}
                 >
-                  <div
-                    className="makeup-card__img"
-                    style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
-                  >
-                    {!imageUrl ? <span>正在生成预览...</span> : null}
+                  <div className="makeup-card__img">
+                    {imageUrl ? (
+                      <img src={imageUrl} alt={`${style.name}预览`} loading="lazy" decoding="async" />
+                    ) : (
+                      <span>正在生成预览...</span>
+                    )}
                   </div>
                   <div className="makeup-card__info">
                     <h3>{style.name}</h3>
@@ -232,11 +253,12 @@ export default function Makeup() {
                   onClick={() => setBrideStyle(style.id)}
                   disabled={!imageUrl}
                 >
-                  <div
-                    className="makeup-card__img"
-                    style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
-                  >
-                    {!imageUrl ? <span>正在生成预览...</span> : null}
+                  <div className="makeup-card__img">
+                    {imageUrl ? (
+                      <img src={imageUrl} alt={`${style.name}预览`} loading="lazy" decoding="async" />
+                    ) : (
+                      <span>正在生成预览...</span>
+                    )}
                   </div>
                   <div className="makeup-card__info">
                     <h3>{style.name}</h3>

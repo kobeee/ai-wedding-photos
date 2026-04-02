@@ -1,28 +1,28 @@
 """参考图筛选 — 从用户上传中选出主图 + 辅图。
 
-规则（来自工程落地版 §五）：
-- 主身份锚图：1 张（正脸清晰、遮挡最少、表情自然）
-- 辅助锚图：最多 2 张（不同角度或半身/全身）
-- 总上限：3 张
+优先级策略：
+- 有双人合照时：优先 `couple_full` + 新郎/新娘正脸图
+- 无双人合照时：优先新郎/新娘正脸图，再补各自全身图
 - 没有参考图时管线降级为"风格样片生成"
 """
 
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from PIL import Image
 
-from utils.storage import upload_metadata_path
+from utils.storage import read_upload_metadata
 
 logger = logging.getLogger(__name__)
 
 MAX_PRIMARY = 3
-MAX_AUXILIARY = 1
+MAX_AUXILIARY = 2
 MAX_TOTAL = MAX_PRIMARY + MAX_AUXILIARY
+COUPLE_ANCHOR_TOTAL = 3
+SINGLE_ROLE_PAIR_TOTAL = 4
 
 # 最小可接受尺寸（像素，短边）
 MIN_SHORT_SIDE = 256
@@ -37,6 +37,7 @@ class ReferenceImage:
     data: bytes
     mime: str
     role: str = "unknown"
+    slot: str = ""
     path: str = ""
 
 
@@ -128,22 +129,60 @@ def _image_quality_score(data: bytes) -> float:
     return min(score, 1.0)
 
 
-def _load_role(image_path: Path) -> str:
-    """从 sidecar 元数据中读取角色标签。"""
-    meta_path = upload_metadata_path(image_path)
-    if not meta_path.exists():
-        return "unknown"
+def _metadata_role(metadata: dict) -> str:
+    role = str(metadata.get("role", "")).strip().lower()
+    return role if role in {"couple", "bride", "groom"} else "unknown"
 
-    try:
-        raw = json.loads(meta_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        logger.warning("Failed to read upload metadata: %s", meta_path)
-        return "unknown"
 
-    role = str(raw.get("role", "")).strip().lower()
-    if role in {"couple", "bride", "groom"}:
-        return role
-    return "unknown"
+def _metadata_slot_bonus(slot: str) -> float:
+    slot_bonus = {
+        "couple_full": 0.18,
+        "bride_portrait": 0.12,
+        "groom_portrait": 0.12,
+        "bride_full": 0.08,
+        "groom_full": 0.08,
+    }
+    return slot_bonus.get(slot, 0.0)
+
+
+def _metadata_is_accepted(metadata: dict) -> bool:
+    validation = metadata.get("validation")
+    if not isinstance(validation, dict):
+        return True
+    accepted = validation.get("accepted")
+    return bool(accepted) if accepted is not None else True
+
+
+def _choose_by_slot_preference(
+    candidates: list[tuple[float, Path, bytes, str, str, str]],
+    selected_paths: set[Path],
+    preferred_slots: tuple[str, ...],
+) -> tuple[float, Path, bytes, str, str, str] | None:
+    available = [item for item in candidates if item[1] not in selected_paths]
+    if not available:
+        return None
+
+    for slot in preferred_slots:
+        for item in available:
+            if item[5] == slot:
+                return item
+
+    return available[0]
+
+
+def _append_reference(
+    result_list: list[ReferenceImage],
+    item: tuple[float, Path, bytes, str, str, str] | None,
+    selected_paths: set[Path],
+) -> None:
+    if item is None:
+        return
+
+    _, fpath, data, mime, role, slot = item
+    result_list.append(
+        ReferenceImage(data=data, mime=mime, role=role, slot=slot, path=str(fpath)),
+    )
+    selected_paths.add(fpath)
 
 
 def select_references(upload_dir: Path) -> ReferenceSet:
@@ -158,7 +197,7 @@ def select_references(upload_dir: Path) -> ReferenceSet:
         return result
 
     # 收集所有候选图
-    candidates: list[tuple[float, Path, bytes, str, str]] = []
+    candidates: list[tuple[float, Path, bytes, str, str, str]] = []
     for ext_pattern in ("*.jpg", "*.jpeg", "*.png"):
         for fpath in upload_dir.glob(ext_pattern):
             if fpath.name.endswith(".meta.json"):
@@ -171,8 +210,12 @@ def select_references(upload_dir: Path) -> ReferenceSet:
             mime = "image/png" if fpath.suffix.lower() == ".png" else "image/jpeg"
             score = _image_quality_score(data)
             if score > 0:
-                role = _load_role(fpath)
-                candidates.append((score, fpath, data, mime, role))
+                metadata = read_upload_metadata(fpath)
+                if not _metadata_is_accepted(metadata):
+                    continue
+                role = _metadata_role(metadata)
+                slot = str(metadata.get("slot", "")).strip().lower()
+                candidates.append((score + _metadata_slot_bonus(slot), fpath, data, mime, role, slot))
 
     if not candidates:
         return result
@@ -180,7 +223,7 @@ def select_references(upload_dir: Path) -> ReferenceSet:
     # 按质量分降序
     candidates.sort(key=lambda x: x[0], reverse=True)
 
-    grouped: dict[str, list[tuple[float, Path, bytes, str, str]]] = {
+    grouped: dict[str, list[tuple[float, Path, bytes, str, str, str]]] = {
         "couple": [],
         "bride": [],
         "groom": [],
@@ -191,46 +234,62 @@ def select_references(upload_dir: Path) -> ReferenceSet:
 
     selected_paths: set[Path] = set()
 
+    target_total = MAX_TOTAL
+
     if grouped["couple"]:
-        _, fpath, data, mime, role = grouped["couple"][0]
-        result.primary.append(
-            ReferenceImage(data=data, mime=mime, role=role, path=str(fpath)),
+        target_total = COUPLE_ANCHOR_TOTAL
+        _append_reference(
+            result.primary,
+            _choose_by_slot_preference(grouped["couple"], selected_paths, ("couple_full",)),
+            selected_paths,
         )
-        selected_paths.add(fpath)
-
-    # 无 couple 锚点时，保持原有 bride + groom 逻辑。
-    if not result.primary and grouped["bride"] and grouped["groom"]:
-        for role in ("bride", "groom"):
-            _, fpath, data, mime, _ = grouped[role][0]
-            result.primary.append(
-                ReferenceImage(data=data, mime=mime, role=role, path=str(fpath)),
+        for role in ("groom", "bride"):
+            if len(result.primary) >= MAX_PRIMARY:
+                break
+            _append_reference(
+                result.primary,
+                _choose_by_slot_preference(
+                    grouped[role],
+                    selected_paths,
+                    (f"{role}_portrait", f"{role}_full"),
+                ),
+                selected_paths,
             )
-            selected_paths.add(fpath)
-    elif not result.primary:
-        _, fpath, data, mime, role = candidates[0]
-        result.primary.append(
-            ReferenceImage(data=data, mime=mime, role=role, path=str(fpath)),
-        )
-        selected_paths.add(fpath)
+    elif grouped["bride"] and grouped["groom"]:
+        target_total = SINGLE_ROLE_PAIR_TOTAL
+        for role in ("groom", "bride"):
+            _append_reference(
+                result.primary,
+                _choose_by_slot_preference(
+                    grouped[role],
+                    selected_paths,
+                    (f"{role}_portrait", f"{role}_full"),
+                ),
+                selected_paths,
+            )
 
-    for role in ("bride", "groom"):
-        if len(result.primary) >= MAX_PRIMARY or not grouped[role]:
-            continue
-        _, fpath, data, mime, _ = grouped[role][0]
-        if fpath in selected_paths:
-            continue
-        result.primary.append(
-            ReferenceImage(data=data, mime=mime, role=role, path=str(fpath)),
-        )
-        selected_paths.add(fpath)
+        for role in ("groom", "bride"):
+            if len(result.primary) + len(result.auxiliary) >= MAX_TOTAL:
+                break
+            _append_reference(
+                result.auxiliary,
+                _choose_by_slot_preference(
+                    grouped[role],
+                    selected_paths,
+                    (f"{role}_full", f"{role}_portrait"),
+                ),
+                selected_paths,
+            )
+    else:
+        _append_reference(result.primary, candidates[0], selected_paths)
 
-    for _, fpath, data, mime, role in candidates:
-        if len(result.primary) + len(result.auxiliary) >= MAX_TOTAL:
+    for _, fpath, data, mime, role, slot in candidates:
+        if len(result.primary) + len(result.auxiliary) >= target_total:
             break
         if fpath in selected_paths:
             continue
         result.auxiliary.append(
-            ReferenceImage(data=data, mime=mime, role=role, path=str(fpath)),
+            ReferenceImage(data=data, mime=mime, role=role, slot=slot, path=str(fpath)),
         )
         selected_paths.add(fpath)
 

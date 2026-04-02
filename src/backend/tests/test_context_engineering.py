@@ -59,6 +59,17 @@ class ContextEngineeringTests(unittest.TestCase):
         )
         self.assertEqual(decision.mode, RepairMode.reject)
 
+    def test_thresholds_attempt_local_fix_when_hard_fail_has_retry_budget(self) -> None:
+        decision = decide_repair(
+            hard_fail=True,
+            identity_match=0.92,
+            brief_alignment=0.86,
+            aesthetic_score=0.83,
+            fix_round=0,
+            max_rounds=2,
+        )
+        self.assertEqual(decision.mode, RepairMode.local_fix)
+
     def test_thresholds_reject_low_scoring_soft_fail_on_final_round(self) -> None:
         decision = decide_repair(
             hard_fail=False,
@@ -193,6 +204,23 @@ class ContextEngineeringTests(unittest.TestCase):
         assert prepared_size is not None
         self.assertLessEqual(max(prepared_size), 1536)
         self.assertGreater(len(prepared), 0)
+
+    def test_vlm_parse_report_tolerates_fenced_json(self) -> None:
+        report = VLMCheckerService()._parse_report(
+            """```json
+            {
+              "hard_fail": false,
+              "identity_match": 0.91,
+              "brief_alignment": 0.88,
+              "aesthetic_score": 0.9,
+              "issues": [],
+              "repair_hints": []
+            }
+            ```"""
+        )
+
+        self.assertFalse(report.hard_fail)
+        self.assertGreaterEqual(report.score, 0.89)
 
     def test_nano_image_size_normalization_matches_laozhang_contract(self) -> None:
         self.assertEqual(NanoBananaService._normalize_size("1024"), "1K")

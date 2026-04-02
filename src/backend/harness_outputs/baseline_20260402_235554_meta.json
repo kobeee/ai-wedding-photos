@@ -1,0 +1,39 @@
+{
+  "experiment": "baseline",
+  "description": "三轮法基线：标准 prompt，iceland intimate (close-up)，不做任何额外调整",
+  "package_id": "iceland",
+  "variant_id": "iceland_intimate",
+  "ref_count": 3,
+  "ref_roles": {
+    "couple": 1,
+    "bride": 1,
+    "groom": 1,
+    "unknown": 0
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "status": "ok",
+      "bytes": 672065,
+      "elapsed": 25.6,
+      "path": "/Users/elvis/Documents/codes/challenges/2026/Mar/AI-wedding-photos/src/backend/harness_outputs/baseline_20260402_235554_R1_scene.png"
+    },
+    {
+      "round": 2,
+      "status": "ok",
+      "bytes": 534577,
+      "elapsed": 24.6,
+      "path": "/Users/elvis/Documents/codes/challenges/2026/Mar/AI-wedding-photos/src/backend/harness_outputs/baseline_20260402_235554_R2_refined.png"
+    },
+    {
+      "round": 3,
+      "status": "ok",
+      "bytes": 645286,
+      "elapsed": 27.0,
+      "path": "/Users/elvis/Documents/codes/challenges/2026/Mar/AI-wedding-photos/src/backend/harness_outputs/baseline_20260402_235554_R3_final.png"
+    }
+  ],
+  "total_elapsed": 77.2,
+  "cost_estimate": "~$0.39",
+  "timestamp": "20260402_235554"
+}

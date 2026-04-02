@@ -2,12 +2,27 @@ export interface UploadFileInfo {
   id: string
   filename: string
   url: string
+  role: string
+  slot: string
+}
+
+export interface UploadValidationIssue {
+  level: 'error' | 'warning'
+  message: string
+  slot: string
+}
+
+export interface UploadValidationSummary {
+  ok: boolean
+  issues: UploadValidationIssue[]
+  summary: string
 }
 
 export interface UploadResponse {
   user_id: string
   session_token: string
   files: UploadFileInfo[]
+  validation?: UploadValidationSummary | null
 }
 
 export interface MakeupResponse {
@@ -149,11 +164,28 @@ export interface StartOrderResponse {
 
 type ApiRequestOptions = RequestInit
 
+export class ApiError extends Error {
+  status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
 async function readErrorMessage(response: Response): Promise<string> {
+  if (response.status === 413) {
+    return '上传内容过大：你这次一共上传了太大的原图，请压缩部分照片后重试。'
+  }
+
   try {
-    const payload = (await response.json()) as { detail?: string }
-    if (payload.detail) {
+    const payload = (await response.json()) as { detail?: string | string[] }
+    if (typeof payload.detail === 'string' && payload.detail) {
       return payload.detail
+    }
+    if (Array.isArray(payload.detail) && payload.detail.length > 0) {
+      return payload.detail.join('；')
     }
   } catch {
     // Ignore JSON parsing failures and fall back to the status line.
@@ -179,7 +211,7 @@ export async function apiRequest<T>(
   })
 
   if (!response.ok) {
-    throw new Error(await readErrorMessage(response))
+    throw new ApiError(await readErrorMessage(response), response.status)
   }
 
   return (await response.json()) as T

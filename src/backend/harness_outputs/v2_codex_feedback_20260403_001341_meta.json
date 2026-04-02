@@ -1,0 +1,39 @@
+{
+  "experiment": "v2_codex_feedback",
+  "description": "基于 Codex B 评审反馈优化：(1) R1 要求更紧凑裁切 + 真实皮肤纹理; (2) R2 增加手部细节修复; (3) R3 强化新娘身份锁定 + 保持亚洲面部结构 + 不动姿势",
+  "package_id": "iceland",
+  "variant_id": "iceland_intimate",
+  "ref_count": 3,
+  "ref_roles": {
+    "couple": 1,
+    "bride": 1,
+    "groom": 1,
+    "unknown": 0
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "status": "ok",
+      "bytes": 704454,
+      "elapsed": 46.3,
+      "path": "/Users/elvis/Documents/codes/challenges/2026/Mar/AI-wedding-photos/src/backend/harness_outputs/v2_codex_feedback_20260403_001341_R1_scene.png"
+    },
+    {
+      "round": 2,
+      "status": "ok",
+      "bytes": 594858,
+      "elapsed": 26.6,
+      "path": "/Users/elvis/Documents/codes/challenges/2026/Mar/AI-wedding-photos/src/backend/harness_outputs/v2_codex_feedback_20260403_001341_R2_refined.png"
+    },
+    {
+      "round": 3,
+      "status": "ok",
+      "bytes": 603288,
+      "elapsed": 44.9,
+      "path": "/Users/elvis/Documents/codes/challenges/2026/Mar/AI-wedding-photos/src/backend/harness_outputs/v2_codex_feedback_20260403_001341_R3_final.png"
+    }
+  ],
+  "total_elapsed": 117.8,
+  "cost_estimate": "~$0.39",
+  "timestamp": "20260403_001341"
+}
