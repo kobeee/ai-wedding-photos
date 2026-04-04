@@ -10,11 +10,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-# 妆造风格 → 英文视觉描述
+# 妆造风格 → 英文视觉描述（按性别区分）
 _MAKEUP_DESCRIPTIONS: dict[str, str] = {
     "natural": "Dewy, barely-there makeup — light foundation, nude lips, soft natural brows, glowing skin",
     "refined": "Polished elegant makeup — flawless base, soft smoky eyes, rose lips, sculpted highlight",
     "sculpt": "Full-coverage dramatic makeup — contoured bone structure, bold liner, red lips, false lashes",
+}
+
+# 男性专用妆造（不适用女性描述）
+_MAKEUP_DESCRIPTIONS_MALE: dict[str, str] = {
+    "natural": "Clean, natural grooming — even skin tone, well-shaped brows, healthy complexion, matte finish",
+    "refined": "Polished grooming — flawless even skin, subtle contour, groomed brows, natural lip color",
+    "sculpt": "Editorial grooming — sculpted skin, defined jawline highlight, strong brows, camera-ready finish",
 }
 
 # 性别组合 → 英文描述
@@ -41,7 +48,11 @@ def render_slots(
 ) -> SlotPayload:
     """将原始参数渲染为 prompt 可用的文本片段。"""
 
-    makeup = _MAKEUP_DESCRIPTIONS.get(makeup_style, _MAKEUP_DESCRIPTIONS["natural"])
+    # 男性用男性专用妆造描述
+    if gender == "male":
+        makeup = _MAKEUP_DESCRIPTIONS_MALE.get(makeup_style, _MAKEUP_DESCRIPTIONS_MALE["natural"])
+    else:
+        makeup = _MAKEUP_DESCRIPTIONS.get(makeup_style, _MAKEUP_DESCRIPTIONS["natural"])
 
     # 性别 → pairing 描述
     pairing = _PAIRING_DESCRIPTIONS.get(gender, _PAIRING_DESCRIPTIONS["couple"])

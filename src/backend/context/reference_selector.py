@@ -185,8 +185,12 @@ def _append_reference(
     selected_paths.add(fpath)
 
 
-def select_references(upload_dir: Path) -> ReferenceSet:
+def select_references(upload_dir: Path, *, gender: str = "couple") -> ReferenceSet:
     """从上传目录中筛选参考图。
+
+    Args:
+        upload_dir: 用户上传目录
+        gender: "couple"/"female"/"male" — solo 场景只保留对应性别的参考图
 
     Returns:
         ReferenceSet with primary (1) + auxiliary (≤2) images.
@@ -195,6 +199,13 @@ def select_references(upload_dir: Path) -> ReferenceSet:
 
     if not upload_dir.exists():
         return result
+
+    # solo 场景的角色过滤：排除异性参考图
+    _excluded_roles: set[str] = set()
+    if gender == "female":
+        _excluded_roles = {"groom"}
+    elif gender == "male":
+        _excluded_roles = {"bride"}
 
     # 收集所有候选图
     candidates: list[tuple[float, Path, bytes, str, str, str]] = []
@@ -214,8 +225,15 @@ def select_references(upload_dir: Path) -> ReferenceSet:
                 if not _metadata_is_accepted(metadata):
                     continue
                 role = _metadata_role(metadata)
+                # gender 过滤：solo 场景排除异性参考图
+                if role in _excluded_roles:
+                    continue
                 slot = str(metadata.get("slot", "")).strip().lower()
-                candidates.append((score + _metadata_slot_bonus(slot), fpath, data, mime, role, slot))
+                # solo 场景降权 couple 合照的 slot bonus（合照对 solo 价值较低）
+                slot_bonus = _metadata_slot_bonus(slot)
+                if gender != "couple" and slot == "couple_full":
+                    slot_bonus *= 0.3
+                candidates.append((score + slot_bonus, fpath, data, mime, role, slot))
 
     if not candidates:
         return result

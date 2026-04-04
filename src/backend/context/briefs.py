@@ -19,6 +19,14 @@ class PromptVariant(BaseModel):
     emotion_focus: str = ""
     avoid_local: list[str] = Field(default_factory=list)
 
+    # Solo 场景专用覆盖（有值时优先使用，不再走 sanitize 兜底）
+    solo_bride_intent: str = ""
+    solo_bride_action: str = ""
+    solo_bride_emotion: str = ""
+    solo_groom_intent: str = ""
+    solo_groom_action: str = ""
+    solo_groom_emotion: str = ""
+
 
 class CreativeBrief(BaseModel):
     """套餐创意简报 — 替代旧 CameraSchema。
@@ -88,7 +96,7 @@ _BRIEF_ICELAND = CreativeBrief(
             id="iceland_epic",
             intent="Two tiny figures against an infinite landscape",
             framing="wide",
-            action="Standing together on black sand, glacier and aurora behind them",
+            action="Standing on black sand with glacier and aurora behind them, his hand on the small of her back, her head tilted toward his shoulder, two small figures against immensity",
             emotion_focus="Small against the universe, yet unshakable together",
             avoid_local=["blurry figures", "lost facial detail", "disproportionate bodies"],
         ),
@@ -99,6 +107,9 @@ _BRIEF_ICELAND = CreativeBrief(
             action="Genuine laughter, his arms around her from behind, snowflakes in the air",
             emotion_focus="Warmth that defies the cold — unscripted joy",
             avoid_local=["fake smiles", "awkward hand placement"],
+            solo_bride_intent="Her laughter cracks the silence of the frozen world",
+            solo_bride_action="The bride mid-laugh, face tilted skyward, snowflakes catching in her hair, arms wrapped around herself against the cold",
+            solo_bride_emotion="Unguarded joy — she forgot the cold, she forgot the camera, she is simply alive",
         ),
         PromptVariant(
             id="iceland_departure",
@@ -149,7 +160,7 @@ _BRIEF_CYBERPUNK = CreativeBrief(
             id="cyber_alley",
             intent="Elegance crashing into chaos",
             framing="wide",
-            action="Full body in neon alley, holographic rain, dramatic silhouettes",
+            action="Full body in neon alley, his arm around her waist as they stride through holographic rain, her gown catching neon reflections, both looking ahead with fierce confidence",
             emotion_focus="Defiant beauty — they own this street tonight",
             avoid_local=["lost figure detail", "illegible faces", "flat lighting"],
         ),
@@ -160,6 +171,9 @@ _BRIEF_CYBERPUNK = CreativeBrief(
             action="Laughing together under a holographic umbrella, city blurred behind",
             emotion_focus="Playful rebellion — love as an act of defiance",
             avoid_local=["stiff poses", "empty expressions", "over-busy background"],
+            solo_groom_intent="One man grinning at a world that takes itself too seriously",
+            solo_groom_action="The groom leaning against a neon-lit wall, smirking with quiet confidence, holographic rain streaking past, hands in pockets",
+            solo_groom_emotion="Cool defiance — the city hums but he is unmoved, a still point in electric chaos",
         ),
         PromptVariant(
             id="cyber_reflection",

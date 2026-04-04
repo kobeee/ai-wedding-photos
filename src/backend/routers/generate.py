@@ -158,6 +158,7 @@ async def _dual_path_fix(
     render_prompt: str,
     refs: list[tuple[bytes, str]],
     user_id: str,
+    gender: str = "couple",
 ) -> bytes:
     physical = report.physical_issues
     emotional = report.emotional_issues
@@ -176,6 +177,7 @@ async def _dual_path_fix(
             repair_hints=_select_hints(issues),
             has_identity_refs=bool(refs),
             focus=focus,
+            gender=gender,
         )
         return await nano_banana_service.repair_with_references(
             prompt=fix_prompt,
@@ -197,6 +199,7 @@ async def _dual_path_fix(
                 repair_hints=_select_hints(emotional),
                 has_identity_refs=bool(refs),
                 focus="emotional",
+                gender=gender,
             )
             try:
                 _, tmp_path = await save_generated_image(user_id, result, ext=".png")
@@ -259,7 +262,8 @@ async def _run_generation(
 
     try:
         upload_dir = user_upload_dir(req.user_id)
-        ref_set = select_references(upload_dir)
+        gender = req.gender.value if req.gender else "couple"
+        ref_set = select_references(upload_dir, gender=gender)
         selected_refs = ref_set.all_refs
 
         await notify(
@@ -273,7 +277,6 @@ async def _run_generation(
 
         brief = get_brief(req.package_id)
         makeup = req.makeup_style.value if req.makeup_style else "natural"
-        gender = req.gender.value if req.gender else "couple"
         preferences = {
             key: value
             for key, value in {
@@ -318,6 +321,7 @@ async def _run_generation(
                 has_refs=ref_set.has_identity,
                 has_couple_refs=ref_set.has_couple_identity,
                 has_couple_anchor=ref_set.has_couple_anchor,
+                gender=gender,
             )
 
             await notify(
@@ -411,6 +415,7 @@ async def _run_generation(
                         prompt,
                         selected_refs,
                         req.user_id,
+                        gender=gender,
                     )
                     continue
                 if decision.mode == RepairMode.regenerate:
