@@ -28,6 +28,7 @@ Thumbs.db
 # Project specific
 src/backend/uploads/
 src/backend/outputs/
+src/backend/harness_outputs/
 images/generated-*.png
 
 # Logs
