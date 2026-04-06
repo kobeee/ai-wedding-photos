@@ -78,6 +78,40 @@ class ReferenceSet:
         counts = self.selected_role_counts
         return counts["couple"] > 0
 
+    @property
+    def couple_anchor(self) -> ReferenceImage | None:
+        for ref in self.primary + self.auxiliary:
+            if ref.role == "couple":
+                return ref
+        return None
+
+    @property
+    def structure_refs(self) -> list[tuple[bytes, str]]:
+        """返回用于锁定双人比例/站位的结构参考。"""
+        if self.couple_anchor is None:
+            return []
+        return [(self.couple_anchor.data, self.couple_anchor.mime)]
+
+    @property
+    def identity_refs(self) -> list[tuple[bytes, str]]:
+        """返回纯身份参考，尽量排除双人结构锚，减少角色混淆。"""
+        role_specific = [
+            (ref.data, ref.mime)
+            for ref in self.primary + self.auxiliary
+            if ref.role in {"bride", "groom"}
+        ]
+        if role_specific:
+            return role_specific
+        return self.all_refs
+
+    def identity_refs_for_role(self, role: str) -> list[tuple[bytes, str]]:
+        refs = [
+            (ref.data, ref.mime)
+            for ref in self.primary + self.auxiliary
+            if ref.role == role
+        ]
+        return refs
+
 
 def _image_quality_score(data: bytes) -> float:
     """粗略评估图片质量，返回 0-1 分。

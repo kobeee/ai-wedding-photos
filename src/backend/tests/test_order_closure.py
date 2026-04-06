@@ -19,6 +19,9 @@ if str(BACKEND_ROOT) not in sys.path:
 from config import settings
 from main import app
 from models.database import close_db, update_order
+from models.schemas import DeliverableKind, GenerateRequest, RenderTrack, TaskStatusEnum, VerifiabilityAssessment
+from routers.generate import _run_generation
+from services.makeup_reference import resolve_selected_makeup_reference
 
 
 def _make_image_bytes(size: tuple[int, int] = (1200, 1600), color: tuple[int, int, int] = (220, 200, 180)) -> bytes:
@@ -45,28 +48,42 @@ class OrderClosureTests(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def test_paid_order_payment_and_delivery_flow(self) -> None:
-        fake_report = SimpleNamespace(
-            score=0.96,
-            inspection_unavailable=False,
-            hard_fail=False,
-            identity_match=0.98,
-            brief_alignment=0.96,
-            aesthetic_score=0.95,
-            physical_issues=[],
-            emotional_issues=[],
-            repair_hints=[],
-            issues=[],
-        )
         fake_image = _make_image_bytes()
+        fake_verifiability = VerifiabilityAssessment(
+            is_identity_verifiable=True,
+            is_proportion_verifiable=True,
+            face_area_ratio_bride=0.08,
+            face_area_ratio_groom=0.08,
+            body_visibility_score=0.9,
+        )
+        fake_orchestrated = SimpleNamespace(
+            assets=[
+                SimpleNamespace(
+                    image_data=fake_image,
+                    kind=DeliverableKind.validation_safe,
+                    track=RenderTrack.validation,
+                    quality_score=0.94,
+                    verifiability=fake_verifiability,
+                    user_visible=False,
+                    notes=["validation track passed"],
+                ),
+                SimpleNamespace(
+                    image_data=fake_image,
+                    kind=DeliverableKind.hero_atmosphere,
+                    track=RenderTrack.hero,
+                    quality_score=0.96,
+                    verifiability=fake_verifiability,
+                    user_visible=True,
+                    notes=["hero track passed identity gate"],
+                ),
+            ]
+        )
 
         with (
-            patch("routers.makeup.nano_banana_service.image_to_image", new=AsyncMock(return_value=fake_image)),
-            patch("routers.makeup.nano_banana_service.text_to_image", new=AsyncMock(return_value=fake_image)),
-            patch("routers.generate.nano_banana_service.multi_reference_generate", new=AsyncMock(return_value=fake_image)),
-            patch("routers.generate.nano_banana_service.text_to_image", new=AsyncMock(return_value=fake_image)),
-            patch("routers.generate.nano_banana_service.repair_with_references", new=AsyncMock(return_value=fake_image)),
-            patch("routers.generate.vlm_checker_service.check_and_suggest_fix_prompt", new=AsyncMock(return_value=(fake_report, ""))),
+            patch("services.makeup_reference.nano_banana_service.image_to_image", new=AsyncMock(return_value=fake_image)),
+            patch("services.makeup_reference.nano_banana_service.text_to_image", new=AsyncMock(return_value=fake_image)),
             patch("routers.generate.director_service.edit_brief", new=AsyncMock(side_effect=lambda brief, _prefs: brief)),
+            patch("routers.generate.production_orchestrator_service.run_photo", new=AsyncMock(return_value=fake_orchestrated)),
         ):
             with TestClient(app) as client:
                 upload_response = client.post(
@@ -163,6 +180,7 @@ class OrderClosureTests(unittest.TestCase):
                 self.assertEqual(deliverables.status_code, 200)
                 items = deliverables.json()["items"]
                 self.assertEqual(len(items), 2)
+                self.assertTrue(all(item["photo_status"] == DeliverableKind.hero_atmosphere.value for item in items))
 
                 file_response = client.get(items[0]["url"])
                 self.assertEqual(file_response.status_code, 200)
@@ -183,8 +201,8 @@ class OrderClosureTests(unittest.TestCase):
         image_to_image = AsyncMock(return_value=fake_image)
 
         with (
-            patch("routers.makeup.nano_banana_service.image_to_image", new=image_to_image),
-            patch("routers.makeup.nano_banana_service.text_to_image", new=AsyncMock(return_value=fake_image)),
+            patch("services.makeup_reference.nano_banana_service.image_to_image", new=image_to_image),
+            patch("services.makeup_reference.nano_banana_service.text_to_image", new=AsyncMock(return_value=fake_image)),
             TestClient(app) as client,
         ):
             upload_response = client.post(
@@ -221,6 +239,107 @@ class OrderClosureTests(unittest.TestCase):
             self.assertEqual(second_response.status_code, 200)
             self.assertEqual(second_response.json()["images"], first_response.json()["images"])
             self.assertEqual(image_to_image.await_count, 3)
+
+    def test_resolve_selected_makeup_reference_generates_only_requested_style(self) -> None:
+        fake_image = _make_image_bytes()
+        image_to_image = AsyncMock(return_value=fake_image)
+
+        with (
+            patch("services.makeup_reference.nano_banana_service.image_to_image", new=image_to_image),
+            patch("services.makeup_reference.nano_banana_service.text_to_image", new=AsyncMock(return_value=fake_image)),
+            TestClient(app) as client,
+        ):
+            upload_response = client.post(
+                "/api/upload",
+                files=[
+                    ("files", ("bride.png", fake_image, "image/png")),
+                    ("roles", (None, "bride")),
+                    ("slots", (None, "bride_portrait")),
+                ],
+            )
+            self.assertEqual(upload_response.status_code, 200)
+            user_id = upload_response.json()["user_id"]
+
+            first_ref = asyncio.run(resolve_selected_makeup_reference(user_id, "female", "refined", None))
+            second_ref = asyncio.run(resolve_selected_makeup_reference(user_id, "female", "refined", None))
+
+            self.assertIsNotNone(first_ref)
+            self.assertIsNotNone(second_ref)
+            self.assertEqual(image_to_image.await_count, 1)
+
+    def test_run_generation_reports_intermediate_progress_within_single_photo(self) -> None:
+        fake_image = _make_image_bytes()
+        fake_verifiability = VerifiabilityAssessment(
+            is_identity_verifiable=True,
+            is_proportion_verifiable=True,
+            face_area_ratio_bride=0.08,
+            face_area_ratio_groom=0.08,
+            body_visibility_score=0.9,
+        )
+        fake_orchestrated = SimpleNamespace(
+            assets=[
+                SimpleNamespace(
+                    image_data=fake_image,
+                    kind=DeliverableKind.validation_safe,
+                    track=RenderTrack.validation,
+                    quality_score=0.94,
+                    verifiability=fake_verifiability,
+                    user_visible=False,
+                    notes=["validation track passed"],
+                ),
+                SimpleNamespace(
+                    image_data=fake_image,
+                    kind=DeliverableKind.hero_atmosphere,
+                    track=RenderTrack.hero,
+                    quality_score=0.96,
+                    verifiability=fake_verifiability,
+                    user_visible=True,
+                    notes=["hero track passed identity gate"],
+                ),
+            ]
+        )
+        req = GenerateRequest(
+            user_id="progress-user",
+            package_id="iceland",
+        )
+        progress_updates: list[tuple[int, str]] = []
+
+        async def notify(**fields) -> None:
+            progress = fields.get("progress")
+            message = fields.get("message")
+            if progress is not None and message is not None:
+                progress_updates.append((progress, message))
+
+        async def fake_run_photo(**kwargs):
+            progress_callback = kwargs.get("progress_callback")
+            if progress_callback is not None:
+                await progress_callback(0.14, "正在验证构图与身份第 1/5 次...")
+                await progress_callback(0.52, "验证通过，开始生成氛围主片...")
+                await progress_callback(0.84, "主片身份不足，正在尝试锁脸修正...")
+                await progress_callback(0.9, "主片通过质检，正在整理交付...")
+            return fake_orchestrated
+
+        with (
+            patch("routers.generate.select_references", return_value=SimpleNamespace(count=2, has_identity=True)),
+            patch("routers.generate.get_brief", return_value=SimpleNamespace(story="冰岛纪实", emotion="浪漫克制")),
+            patch("routers.generate.render_slots", return_value=SimpleNamespace()),
+            patch("routers.generate.resolve_selected_makeup_reference", new=AsyncMock(return_value=None)),
+            patch("routers.generate.get_variants", return_value=[SimpleNamespace(id="variant-1")]),
+            patch("routers.generate.production_orchestrator_service.run_photo", new=AsyncMock(side_effect=fake_run_photo)),
+            patch("routers.generate.prepare_delivery_image", new=AsyncMock(return_value=fake_image)),
+        ):
+            outcome = asyncio.run(
+                _run_generation(
+                    req,
+                    photos_per_package=1,
+                    notify=notify,
+                )
+            )
+
+        self.assertEqual(outcome.status, TaskStatusEnum.completed)
+        self.assertTrue(any(progress > 12 for progress, _ in progress_updates))
+        self.assertTrue(any("第 1/1 张:" in message for _, message in progress_updates))
+        self.assertTrue(any(progress == 56 for progress, _ in progress_updates))
 
 
 if __name__ == "__main__":

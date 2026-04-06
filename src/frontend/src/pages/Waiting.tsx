@@ -1,13 +1,15 @@
 import { startTransition, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Aperture, Circle, CircleAlert, CircleCheck, Loader, RefreshCw } from 'lucide-react'
 import {
   apiRequest,
+  createOrder,
   fetchLatestOrder,
   type BatchListResponse,
   type DeliverableListResponse,
   type GenerationBatchInfo,
   type OrderInfo,
+  type PaymentSessionResponse,
   type StartOrderResponse,
 } from '../lib/api'
 import { getWorkflowState, updateWorkflowState } from '../lib/workflow'
@@ -49,9 +51,10 @@ function getCurrentStep(progress: number, status: GenerationBatchInfo['status'] 
 }
 
 export default function Waiting() {
+  const { orderId: urlOrderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
   const workflow = getWorkflowState()
-  const [resolvedOrderId, setResolvedOrderId] = useState(workflow.orderId || '')
+  const [resolvedOrderId, setResolvedOrderId] = useState(urlOrderId || workflow.orderId || '')
   const [order, setOrder] = useState<OrderInfo | null>(null)
   const [progress, setProgress] = useState(workflow.progress || 0)
   const [message, setMessage] = useState(workflow.taskMessage || '正在准备订单履约...')
@@ -67,31 +70,76 @@ export default function Waiting() {
 
     async function resolveLatestOrder() {
       try {
-        const latestOrder = await fetchLatestOrder()
-        if (cancelled) {
-          return
+        const wf = getWorkflowState()
+        const hasCurrentSelection = wf.selectedSku?.id && wf.selectedSceneIds?.length
+
+        if (!hasCurrentSelection) {
+          const latestOrder = await fetchLatestOrder()
+          if (cancelled) {
+            return
+          }
+          if (latestOrder) {
+            setResolvedOrderId(latestOrder.order_id)
+            setOrder(latestOrder)
+            updateWorkflowState({
+              orderId: latestOrder.order_id,
+              orderPaymentStatus: latestOrder.payment_status,
+              orderFulfillmentStatus: latestOrder.fulfillment_status,
+              promisedPhotos: latestOrder.entitlement_snapshot.promised_photos,
+              deliverableCount: latestOrder.deliverable_count,
+              remainingReruns: latestOrder.remaining_reruns,
+            })
+            return
+          }
         }
-        if (!latestOrder) {
-          startTransition(() => {
-            navigate('/checkout')
+        if (wf.selectedSku?.id && wf.selectedSceneIds?.length) {
+          const newOrder = await createOrder({
+            sku_id: wf.selectedSku.id,
+            email: wf.email || '',
+            scene_ids: wf.selectedSceneIds,
+            experience_code: wf.experienceCode,
           })
+          if (cancelled) {
+            return
+          }
+
+          updateWorkflowState({
+            orderId: newOrder.order_id,
+            orderPaymentStatus: newOrder.payment_status,
+            orderFulfillmentStatus: newOrder.fulfillment_status,
+            promisedPhotos: newOrder.entitlement_snapshot.promised_photos,
+            deliverableCount: newOrder.deliverable_count,
+            remainingReruns: newOrder.remaining_reruns,
+          })
+
+          if (newOrder.amount > 0 && newOrder.payment_status === 'unpaid') {
+            const paySession = await apiRequest<PaymentSessionResponse>(
+              '/api/pay/mock/create',
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: newOrder.order_id }),
+              },
+            )
+            updateWorkflowState({ paymentId: paySession.payment_id })
+            startTransition(() => {
+              navigate(`/pay/result?order_id=${newOrder.order_id}&payment_id=${paySession.payment_id}`)
+            })
+            return
+          }
+
+          setResolvedOrderId(newOrder.order_id)
+          setOrder(newOrder)
           return
         }
 
-        setResolvedOrderId(latestOrder.order_id)
-        setOrder(latestOrder)
-        updateWorkflowState({
-          orderId: latestOrder.order_id,
-          orderPaymentStatus: latestOrder.payment_status,
-          orderFulfillmentStatus: latestOrder.fulfillment_status,
-          promisedPhotos: latestOrder.entitlement_snapshot.promised_photos,
-          deliverableCount: latestOrder.deliverable_count,
-          remainingReruns: latestOrder.remaining_reruns,
+        startTransition(() => {
+          navigate('/plan')
         })
       } catch {
         if (!cancelled) {
           startTransition(() => {
-            navigate('/checkout')
+            navigate('/plan')
           })
         }
       }
@@ -157,7 +205,7 @@ export default function Waiting() {
 
       if ((orderPayload.fulfillment_status === 'delivered' || orderPayload.fulfillment_status === 'partially_delivered') && resultUrls.length > 0) {
         startTransition(() => {
-          navigate('/review')
+          navigate(`/delivery/${orderPayload.order_id}`)
         })
         return
       }
@@ -197,6 +245,10 @@ export default function Waiting() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+              groom_makeup_style: workflow.selectedMakeup?.groom || 'natural',
+              bride_makeup_style: workflow.selectedMakeup?.bride || 'refined',
+              groom_makeup_reference_url: workflow.selectedMakeupReferences?.groom,
+              bride_makeup_reference_url: workflow.selectedMakeupReferences?.bride,
               groom_style: groomPreferenceMap[workflow.selectedMakeup?.groom || 'natural'],
               bride_style: bridePreferenceMap[workflow.selectedMakeup?.bride || 'refined'],
             }),

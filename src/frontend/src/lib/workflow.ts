@@ -10,6 +10,7 @@ export interface SkuSelection {
   price: number
   description: string
   tag: string
+  sceneCount?: number
 }
 
 export interface MakeupOptions {
@@ -20,6 +21,11 @@ export interface MakeupOptions {
 export interface MakeupSelection {
   groom: string
   bride: string
+}
+
+export interface MakeupReferenceSelection {
+  groom?: string
+  bride?: string
 }
 
 export interface PersistedUploadFile {
@@ -36,8 +42,12 @@ export interface WorkflowState {
   uploadsComplete?: boolean
   makeupOptions?: MakeupOptions
   selectedMakeup?: MakeupSelection
+  selectedMakeupReferences?: MakeupReferenceSelection
   selectedPackage?: PackageSelection
   selectedSku?: SkuSelection
+  email?: string
+  selectedSceneIds?: string[]
+  experienceCode?: string
   orderId?: string
   paymentId?: string
   orderPaymentStatus?: string

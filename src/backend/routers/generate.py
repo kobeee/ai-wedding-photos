@@ -13,13 +13,8 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 
 from config import settings
 from context.briefs import get_brief
-from context.prompt_assembler import (
-    assemble_generation_prompt,
-    assemble_nano_repair_prompt,
-)
 from context.reference_selector import select_references
 from context.slot_renderer import render_slots
-from context.thresholds import RepairMode, decide_repair, meets_delivery_floor
 from context.variant_planner import get_variants
 from models.database import (
     count_deliverables,
@@ -33,18 +28,20 @@ from models.database import (
 )
 from models.schemas import (
     DeliverableInfo,
+    DeliverableKind,
     GenerateRequest,
     GenerateResponse,
     PackageCategory,
     PackageInfo,
+    ResultAssetInfo,
     TaskStatus,
     TaskStatusEnum,
 )
 from services.delivery_image import prepare_delivery_image
 from services.director import director_service
-from services.gpt_image import gpt_image_service
+from services.makeup_reference import resolve_selected_makeup_reference
 from services.nano_banana import NanoRequestTooLargeError, nano_banana_service
-from services.vlm_checker import vlm_checker_service
+from services.production_orchestrator import production_orchestrator_service
 from utils.storage import save_generated_image, user_upload_dir
 
 logger = logging.getLogger(__name__)
@@ -65,6 +62,9 @@ class GeneratedAsset:
     storage_path: str
     quality_score: float
     delivery_tier: str = "4k"
+    photo_status: str = DeliverableKind.hero_atmosphere.value
+    user_visible: bool = True
+    result_asset: ResultAssetInfo | None = None
 
 
 @dataclass
@@ -75,7 +75,12 @@ class GenerationOutcome:
     quality_score: float
     result_urls: list[str]
     assets: list[GeneratedAsset]
+    result_assets: list[ResultAssetInfo] | None = None
     failure_reason: str = ""
+
+
+def _visible_generated_assets(assets: list[GeneratedAsset]) -> list[GeneratedAsset]:
+    return [asset for asset in assets if asset.user_visible]
 
 
 PACKAGES: dict[str, PackageInfo] = {
@@ -152,81 +157,6 @@ PACKAGES: dict[str, PackageInfo] = {
 }
 
 
-async def _dual_path_fix(
-    img_bytes: bytes,
-    report,
-    render_prompt: str,
-    refs: list[tuple[bytes, str]],
-    user_id: str,
-    gender: str = "couple",
-) -> bytes:
-    physical = report.physical_issues
-    emotional = report.emotional_issues
-    result = img_bytes
-
-    def _select_hints(issues) -> list[str]:
-        if not report.repair_hints:
-            return [issue.description for issue in issues]
-        if physical and emotional:
-            return [issue.description for issue in issues]
-        return list(report.repair_hints)
-
-    async def _apply_nano_fix(issues, focus: str) -> bytes:
-        fix_prompt = assemble_nano_repair_prompt(
-            render_prompt=render_prompt,
-            repair_hints=_select_hints(issues),
-            has_identity_refs=bool(refs),
-            focus=focus,
-            gender=gender,
-        )
-        return await nano_banana_service.repair_with_references(
-            prompt=fix_prompt,
-            image_data=result,
-            reference_images=refs,
-        )
-
-    if physical:
-        try:
-            result = await _apply_nano_fix(physical, "physical")
-            logger.info("Physical fix applied for user %s", user_id)
-        except Exception:
-            logger.warning("Physical fix via Nano failed for user %s", user_id)
-
-    if emotional:
-        if settings.enable_gpt_image_repairs:
-            fix_prompt = assemble_nano_repair_prompt(
-                render_prompt=render_prompt,
-                repair_hints=_select_hints(emotional),
-                has_identity_refs=bool(refs),
-                focus="emotional",
-                gender=gender,
-            )
-            try:
-                _, tmp_path = await save_generated_image(user_id, result, ext=".png")
-                edit_url = await gpt_image_service.edit(image_path=tmp_path, prompt=fix_prompt)
-                import httpx as _httpx
-
-                async with _httpx.AsyncClient(timeout=60) as client:
-                    resp = await client.get(edit_url)
-                    resp.raise_for_status()
-                    result = resp.content
-                logger.info("Emotional fix applied via GPT for user %s", user_id)
-                return result
-            except Exception:
-                logger.warning(
-                    "Emotional fix via GPT failed for user %s; falling back to Nano",
-                    user_id,
-                )
-
-        try:
-            result = await _apply_nano_fix(emotional, "emotional")
-            logger.info("Emotional fix applied via Nano for user %s", user_id)
-        except Exception:
-            logger.warning("Emotional fix via Nano failed for user %s", user_id)
-
-    return result
-
-
 async def _run_generation(
     req: GenerateRequest,
     *,
@@ -264,7 +194,6 @@ async def _run_generation(
         upload_dir = user_upload_dir(req.user_id)
         gender = req.gender.value if req.gender else "couple"
         ref_set = select_references(upload_dir, gender=gender)
-        selected_refs = ref_set.all_refs
 
         await notify(
             progress=8,
@@ -276,7 +205,16 @@ async def _run_generation(
         )
 
         brief = get_brief(req.package_id)
-        makeup = req.makeup_style.value if req.makeup_style else "natural"
+        bride_makeup_style = (
+            req.bride_makeup_style.value
+            if req.bride_makeup_style
+            else (req.makeup_style.value if req.makeup_style else "refined")
+        )
+        groom_makeup_style = (
+            req.groom_makeup_style.value
+            if req.groom_makeup_style
+            else (req.makeup_style.value if req.makeup_style else "natural")
+        )
         preferences = {
             key: value
             for key, value in {
@@ -287,19 +225,30 @@ async def _run_generation(
         } or None
 
         slots = render_slots(
-            makeup_style=makeup,
+            makeup_style=req.makeup_style.value if req.makeup_style else "natural",
             gender=gender,
             preferences=preferences,
+            bride_makeup_style=bride_makeup_style,
+            groom_makeup_style=groom_makeup_style,
+        )
+
+        bride_makeup_ref = await resolve_selected_makeup_reference(
+            req.user_id,
+            "female",
+            bride_makeup_style,
+            req.bride_makeup_reference_url,
+        )
+        groom_makeup_ref = await resolve_selected_makeup_reference(
+            req.user_id,
+            "male",
+            groom_makeup_style,
+            req.groom_makeup_reference_url,
         )
 
         if preferences:
             await notify(message="根据您的偏好调整创意方案...")
             brief = await director_service.edit_brief(brief, preferences)
 
-        # `MAX_FIX_ROUNDS` is the number of allowed repair attempts after the
-        # initial render, so quality checks must run one extra time.
-        max_fix_rounds = max(settings.max_fix_rounds, 0)
-        evaluation_rounds = max_fix_rounds + 1
         variants = get_variants(brief, count=max(photos_per_package, 1))
 
         await notify(
@@ -310,35 +259,43 @@ async def _run_generation(
         assets: list[GeneratedAsset] = []
         total_score = 0.0
         rejected_photos = 0
-        degraded_photos = 0
+        visible_assets = 0
+        photo_span = max(88 // max(photos_per_package, 1), 1)
 
         for index, variant in enumerate(variants):
-            step_base = 12 + index * (88 // max(photos_per_package, 1))
-            prompt = assemble_generation_prompt(
-                brief=brief,
-                variant=variant,
-                slots=slots,
-                has_refs=ref_set.has_identity,
-                has_couple_refs=ref_set.has_couple_identity,
-                has_couple_anchor=ref_set.has_couple_anchor,
-                gender=gender,
-            )
+            step_base = 12 + index * photo_span
+            quality_check_progress = min(step_base + max(44 // max(photos_per_package, 1), 8), 96)
+            post_photo_progress = min(step_base + max(80 // max(photos_per_package, 1), 16), 96)
 
             await notify(
                 progress=step_base,
                 message=f"正在生成第 {index + 1}/{photos_per_package} 张...",
             )
 
-            img_bytes: bytes | None = None
             for attempt in range(3):
                 try:
-                    if selected_refs:
-                        img_bytes = await nano_banana_service.multi_reference_generate(
-                            prompt=prompt,
-                            reference_images=selected_refs,
+                    async def report_photo_progress(stage_progress: float, stage_message: str) -> None:
+                        bounded_progress = max(0.0, min(stage_progress, 1.0))
+                        dynamic_ceiling = max(quality_check_progress - 1, step_base + 1)
+                        mapped_progress = min(
+                            step_base + 1 + int((dynamic_ceiling - step_base - 1) * bounded_progress),
+                            dynamic_ceiling,
                         )
-                    else:
-                        img_bytes = await nano_banana_service.text_to_image(prompt=prompt)
+                        await notify(
+                            progress=mapped_progress,
+                            message=f"第 {index + 1}/{photos_per_package} 张: {stage_message}",
+                        )
+
+                    orchestrated_photo = await production_orchestrator_service.run_photo(
+                        brief=brief,
+                        hero_variant=variant,
+                        slots=slots,
+                        gender=gender,
+                        ref_set=ref_set if ref_set.has_identity else None,
+                        bride_makeup_ref=bride_makeup_ref if gender in {"couple", "female"} else None,
+                        groom_makeup_ref=groom_makeup_ref if gender in {"couple", "male"} else None,
+                        progress_callback=report_photo_progress,
+                    )
                     break
                 except NanoRequestTooLargeError as exc:
                     raise RuntimeError(
@@ -354,131 +311,65 @@ async def _run_generation(
                     )
                     if attempt == 2:
                         raise
+                    await notify(
+                        progress=max(step_base + 1, min(quality_check_progress - 1, step_base + 3)),
+                        message=f"第 {index + 1}/{photos_per_package} 张遇到波动，正在重试第 {attempt + 2}/3 次...",
+                    )
                     await asyncio.sleep(2)
 
-            if img_bytes is None:
+            if not orchestrated_photo.assets:
+                rejected_photos += 1
                 continue
 
             await notify(
                 status=TaskStatusEnum.quality_check,
-                progress=step_base + (44 // max(photos_per_package, 1)),
-                message=f"质检第 {index + 1} 张...",
+                progress=quality_check_progress,
+                message=f"验证双轨第 {index + 1} 张...",
             )
 
-            brief_summary = f"{brief.story} {brief.emotion}"
-            photo_score = 0.0
-            for fix_round in range(evaluation_rounds):
-                report, _ = await vlm_checker_service.check_and_suggest_fix_prompt(
-                    image_data=img_bytes,
-                    original_prompt=prompt,
-                    brief_summary=brief_summary,
-                )
-                photo_score = report.score
-
-                if report.inspection_unavailable:
-                    if not settings.allow_degraded_delivery_on_vlm_unavailable:
-                        raise RuntimeError("质量检查服务暂不可用，已停止交付以避免输出未审图像")
-                    photo_score = settings.quality_acceptable
-                    degraded_photos += 1
-                    logger.warning(
-                        "Photo %d delivered via degraded path because quality check is unavailable",
-                        index + 1,
-                    )
-                    break
-
-                decision = decide_repair(
-                    hard_fail=report.hard_fail,
-                    identity_match=report.identity_match,
-                    brief_alignment=report.brief_alignment,
-                    aesthetic_score=report.aesthetic_score,
-                    fix_round=fix_round,
-                    max_rounds=evaluation_rounds,
-                )
-
-                logger.info(
-                    "Photo %d decision: %s (%s)",
-                    index + 1,
-                    decision.mode.value,
-                    decision.reason,
-                )
-
-                if decision.mode == RepairMode.deliver:
-                    break
-                if decision.mode == RepairMode.local_fix:
-                    await notify(
-                        status=TaskStatusEnum.processing,
-                        message=f"修复第 {index + 1} 张（第 {fix_round + 1} 轮）...",
-                    )
-                    img_bytes = await _dual_path_fix(
-                        img_bytes,
-                        report,
-                        prompt,
-                        selected_refs,
-                        req.user_id,
-                        gender=gender,
-                    )
-                    continue
-                if decision.mode == RepairMode.regenerate:
-                    await notify(
-                        status=TaskStatusEnum.processing,
-                        message=f"重新生成第 {index + 1} 张...",
-                    )
-                    try:
-                        if selected_refs:
-                            img_bytes = await nano_banana_service.multi_reference_generate(
-                                prompt=prompt,
-                                reference_images=selected_refs,
-                            )
-                        else:
-                            img_bytes = await nano_banana_service.text_to_image(prompt=prompt)
-                    except NanoRequestTooLargeError as exc:
-                        raise RuntimeError(
-                            "参考图请求体积仍然过大，请保留清晰近照，避免超大原图后重试"
-                        ) from exc
-                    except Exception:
-                        logger.warning("Regeneration failed for photo %d", index + 1)
-                        break
-                    continue
-
-                rejected_photos += 1
-                logger.warning(
-                    "Photo %d rejected after %d rounds: %s",
-                    index + 1,
-                    fix_round + 1,
-                    decision.reason,
-                )
-                img_bytes = None
-                break
-
-            if img_bytes is None:
-                continue
-
-            if not meets_delivery_floor(photo_score):
-                rejected_photos += 1
-                logger.warning(
-                    "Photo %d blocked by final delivery floor: %.2f",
-                    index + 1,
-                    photo_score,
-                )
-                continue
-
-            total_score += photo_score
-            delivery_bytes = await prepare_delivery_image(img_bytes)
-            _, path = await save_generated_image(req.user_id, delivery_bytes)
-            url = f"/api/files/outputs/{req.user_id}/{path.name}"
-            assets.append(
-                GeneratedAsset(
+            for staged_asset in orchestrated_photo.assets:
+                delivery_bytes = await prepare_delivery_image(staged_asset.image_data)
+                _, path = await save_generated_image(req.user_id, delivery_bytes)
+                url = f"/api/files/outputs/{req.user_id}/{path.name}"
+                result_asset = ResultAssetInfo(
                     url=url,
-                    storage_path=path.name,
-                    quality_score=photo_score,
-                ),
-            )
+                    kind=staged_asset.kind,
+                    track=staged_asset.track,
+                    quality_score=staged_asset.quality_score,
+                    user_visible=staged_asset.user_visible,
+                    verifiability=staged_asset.verifiability,
+                    notes=staged_asset.notes,
+                )
+                assets.append(
+                    GeneratedAsset(
+                        url=url,
+                        storage_path=path.name,
+                        quality_score=staged_asset.quality_score,
+                        photo_status=staged_asset.kind.value,
+                        user_visible=staged_asset.user_visible,
+                        result_asset=result_asset,
+                    ),
+                )
+                if staged_asset.user_visible:
+                    total_score += staged_asset.quality_score
+                    visible_assets += 1
+
+            if not any(asset.user_visible for asset in orchestrated_photo.assets):
+                rejected_photos += 1
+                logger.warning("Photo %d produced no visible deliverable", index + 1)
+                continue
+
             await notify(
                 status=TaskStatusEnum.processing,
-                progress=min(step_base + (80 // max(photos_per_package, 1)), 96),
-                message=f"已完成 {len(assets)}/{photos_per_package} 张交付片...",
-                quality_score=total_score / max(len(assets), 1),
-                result_urls=[item.url for item in assets],
+                progress=post_photo_progress,
+                message=f"已完成 {visible_assets}/{photos_per_package} 张主交付片...",
+                quality_score=total_score / max(visible_assets, 1),
+                result_urls=[item.url for item in assets if item.user_visible],
+                result_assets=[
+                    item.result_asset.model_dump()
+                    for item in assets
+                    if item.result_asset is not None
+                ],
             )
 
         if not assets:
@@ -496,32 +387,33 @@ async def _run_generation(
                 failure_reason=message,
             )
 
-        quality_score = total_score / max(len(assets), 1)
-        if rejected_photos and degraded_photos:
+        visible_generated_assets = _visible_generated_assets(assets)
+        quality_score = total_score / max(visible_assets, 1)
+        validation_count = len([item for item in assets if item.photo_status == DeliverableKind.validation_safe.value])
+        hero_count = len([item for item in visible_generated_assets if item.photo_status == DeliverableKind.hero_atmosphere.value])
+        if rejected_photos:
             message = (
-                f"生成完成，共交付 {len(assets)} 张，拦截 {rejected_photos} 张，"
-                f"质检降级 {degraded_photos} 张，综合评分 {quality_score:.2f}"
-            )
-        elif rejected_photos:
-            message = (
-                f"生成完成，共交付 {len(assets)} 张，拦截 {rejected_photos} 张，"
-                f"综合评分 {quality_score:.2f}"
-            )
-        elif degraded_photos:
-            message = (
-                f"生成完成，共 {len(assets)} 张，质检降级 {degraded_photos} 张，"
+                f"生成完成，validation-safe {validation_count} 张，hero {hero_count} 张，拦截 {rejected_photos} 张，"
                 f"综合评分 {quality_score:.2f}"
             )
         else:
-            message = f"生成完成，共 {len(assets)} 张，综合评分 {quality_score:.2f}"
+            message = (
+                f"生成完成，validation-safe {validation_count} 张，hero {hero_count} 张，"
+                f"综合评分 {quality_score:.2f}"
+            )
 
         return GenerationOutcome(
             status=TaskStatusEnum.completed,
             progress=100,
             message=message,
             quality_score=quality_score,
-            result_urls=[item.url for item in assets],
+            result_urls=[item.url for item in visible_generated_assets],
             assets=assets,
+            result_assets=[
+                item.result_asset
+                for item in assets
+                if item.result_asset is not None
+            ],
         )
 
     except RuntimeError as exc:
@@ -570,6 +462,10 @@ async def _update_task_state(task_id: str, **fields) -> None:
         quality_score=task.quality_score,
         message=task.message,
         result_urls=task.result_urls,
+        result_assets=[
+            item.model_dump() if hasattr(item, "model_dump") else item
+            for item in task.result_assets
+        ],
     )
 
 
@@ -589,6 +485,7 @@ async def _generation_pipeline(task_id: str, req: GenerateRequest) -> None:
         message=outcome.message,
         quality_score=outcome.quality_score,
         result_urls=outcome.result_urls,
+        result_assets=outcome.result_assets or [],
     )
 
 
@@ -631,7 +528,8 @@ async def generate_order_batch(
     )
 
     if outcome.status == TaskStatusEnum.completed:
-        for asset in outcome.assets:
+        visible_assets = _visible_generated_assets(outcome.assets)
+        for asset in visible_assets:
             await create_deliverable(
                 order_id,
                 batch_id,
@@ -641,6 +539,12 @@ async def generate_order_batch(
                 url=asset.url,
                 quality_score=asset.quality_score,
                 delivery_tier=asset.delivery_tier,
+                photo_status=asset.photo_status,
+                metadata=(
+                    asset.result_asset.model_dump()
+                    if asset.result_asset is not None
+                    else {}
+                ),
             )
 
         order = await get_order(order_id)
@@ -655,7 +559,7 @@ async def generate_order_batch(
             progress=100,
             message=outcome.message,
             quality_score=outcome.quality_score,
-            delivered_photos=len(outcome.assets),
+            delivered_photos=len(visible_assets),
             completed_at=_now_iso(),
         )
         await update_order(order_id, fulfillment_status=fulfillment_status)
@@ -751,4 +655,5 @@ async def get_task_result(task_id: str, request: Request):
         "status": task.status.value,
         "quality_score": task.quality_score,
         "result_urls": task.result_urls,
+        "result_assets": [item.model_dump() for item in task.result_assets],
     }

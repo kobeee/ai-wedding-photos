@@ -2,7 +2,7 @@ import { Check, X, Aperture } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import './StepHeader.css'
 
-const steps = ['建立档案', 'AI试妆', '选择套餐']
+const steps = ['选套餐', '选景', '上传', '妆造', '等待', '交付']
 
 interface Props {
   current: number // 1-based

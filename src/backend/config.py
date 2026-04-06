@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     director_model: str = "gemini-3.1-pro-preview"
     vlm_model: str = "gemini-3.1-pro-preview"
     vlm_timeout_seconds: int = 120
-    vlm_max_tokens: int = 2048
+    vlm_max_tokens: int = 4096
     vlm_max_image_dimension: int = 1536
     vlm_jpeg_quality: int = 85
     upload_validation_timeout_seconds: int = 90

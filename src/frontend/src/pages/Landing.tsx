@@ -76,7 +76,7 @@ export default function Landing() {
             无需摆拍，无需修图，AI为你定制专属视觉记忆。
           </p>
           <div className="hero__buttons">
-            <Link to="/upload" className="btn btn--gold" onClick={clearWorkflowState}>免费体验一张</Link>
+            <Link to="/plan" className="btn btn--gold" onClick={clearWorkflowState}>免费体验一张</Link>
             <a href="#gallery" className="btn btn--outline">查看作品集</a>
           </div>
         </div>
@@ -181,7 +181,7 @@ export default function Landing() {
         <h2>准备好拥有你们的<br />专属数字婚纱大片了吗？</h2>
         <p>上传日常照，30秒后见证奇迹</p>
         <div className="final-cta__buttons">
-          <Link to="/upload" className="btn btn--gold btn--lg final-cta__primary" onClick={clearWorkflowState}>免费试拍</Link>
+          <Link to="/plan" className="btn btn--gold btn--lg final-cta__primary" onClick={clearWorkflowState}>免费试拍</Link>
           <a href="#faq" className="btn btn--outline btn--lg">了解更多</a>
         </div>
         <span className="final-cta__trust">无需注册  ·  免费体验  ·  24小时数据自动销毁</span>
@@ -202,7 +202,7 @@ export default function Landing() {
           <div className="footer__nav">
             <h4>支持</h4>
             <a href="#faq">常见问题</a>
-            <a href="#">联系我们</a>
+            <Link to="/orders">订单查询</Link>
             <a href="#">实体冲印</a>
           </div>
           <div className="footer__nav">

@@ -14,6 +14,25 @@ logger = logging.getLogger(__name__)
 
 _db: aiosqlite.Connection | None = None
 
+_DEFAULT_SCENES = (
+    # 西式
+    {"scene_id": "iceland_coast", "category": "western", "name": "冰岛黑沙滩", "brief_ref": "iceland", "description": "极光下的冰岛海岸线，壮阔浪漫", "sort_order": 1},
+    {"scene_id": "french_street", "category": "western", "name": "法式庄园", "brief_ref": "french", "description": "普罗旺斯薰衣草田与石砌拱门", "sort_order": 2},
+    {"scene_id": "western_romantic", "category": "western", "name": "西式教堂", "brief_ref": "western-romantic", "description": "古典欧式教堂与花园仪式感", "sort_order": 3},
+    # 中式
+    {"scene_id": "chinese_courtyard", "category": "chinese", "name": "中式庭院", "brief_ref": "chinese-classic", "description": "红墙黛瓦，传统东方意境", "sort_order": 4},
+    {"scene_id": "onsen_garden", "category": "chinese", "name": "温泉庭院", "brief_ref": "onsen", "description": "日式温泉庭院，禅意与温润", "sort_order": 5},
+    # 旅拍
+    {"scene_id": "travel_destination", "category": "travel", "name": "旅拍目的地", "brief_ref": "travel-destination", "description": "异域风情的旅拍故事", "sort_order": 6},
+    # 影棚
+    {"scene_id": "minimal_studio", "category": "studio", "name": "极简影棚", "brief_ref": "minimal", "description": "纯色背景，光影至上", "sort_order": 7},
+    # 夜景
+    {"scene_id": "cyber_neon", "category": "night", "name": "赛博霓虹", "brief_ref": "cyberpunk", "description": "霓虹灯下的未来感夜景", "sort_order": 8},
+    {"scene_id": "star_fairylights", "category": "night", "name": "星空露营", "brief_ref": "starcamp", "description": "银河与仙女灯的浪漫夜空", "sort_order": 9},
+    # 幻境
+    {"scene_id": "fantasy_canopy", "category": "fantasy", "name": "梦幻森林", "brief_ref": "artistic-fantasy", "description": "魔法森林与发光花海", "sort_order": 10},
+)
+
 _DEFAULT_SKUS = (
     {
         "sku_id": "trial_free",
@@ -117,6 +136,14 @@ def _decode_json(value: str | None, default):
         return json.loads(value)
     except json.JSONDecodeError:
         return default
+
+
+async def _ensure_column(db: aiosqlite.Connection, table: str, column: str, definition: str) -> None:
+    cursor = await db.execute(f"PRAGMA table_info({table})")
+    rows = await cursor.fetchall()
+    if any(str(row["name"]) == column for row in rows):
+        return
+    await db.execute(f"ALTER TABLE {table} ADD COLUMN {definition}")
 
 
 async def get_db() -> aiosqlite.Connection:
@@ -252,6 +279,37 @@ async def _init_tables(db: aiosqlite.Connection) -> None:
             FOREIGN KEY (batch_id) REFERENCES generation_batches(batch_id)
         );
 
+        CREATE TABLE IF NOT EXISTS scene_catalog (
+            scene_id TEXT PRIMARY KEY,
+            category TEXT NOT NULL DEFAULT '',
+            name TEXT NOT NULL,
+            brief_ref TEXT NOT NULL DEFAULT '',
+            description TEXT NOT NULL DEFAULT '',
+            preview_url TEXT NOT NULL DEFAULT '',
+            active INTEGER NOT NULL DEFAULT 1,
+            sort_order INTEGER NOT NULL DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS order_scene_selections (
+            selection_id TEXT PRIMARY KEY,
+            order_id TEXT NOT NULL,
+            scene_id TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (order_id) REFERENCES orders(order_id),
+            FOREIGN KEY (scene_id) REFERENCES scene_catalog(scene_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS experience_codes (
+            code_id TEXT PRIMARY KEY,
+            code TEXT UNIQUE NOT NULL,
+            channel TEXT NOT NULL DEFAULT 'default',
+            status TEXT NOT NULL DEFAULT 'active',
+            bound_email TEXT,
+            bound_order_id TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            used_at TEXT
+        );
+
         CREATE TABLE IF NOT EXISTS tasks (
             task_id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
@@ -273,8 +331,28 @@ async def _init_tables(db: aiosqlite.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_batches_order ON generation_batches(order_id);
         CREATE INDEX IF NOT EXISTS idx_deliverables_order ON deliverables(order_id);
         CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(user_id);
+        CREATE INDEX IF NOT EXISTS idx_experience_codes_code ON experience_codes(code);
+        CREATE INDEX IF NOT EXISTS idx_scene_selections_order ON order_scene_selections(order_id);
     """)
+
+    # 增量迁移：给已有 orders 表加新字段（SQLite 不支持 IF NOT EXISTS 的 ALTER TABLE）
+    for col, default in (("email", "''"), ("delivery_status", "'pending'"), ("experience_code_id", "NULL")):
+        try:
+            await db.execute(f"ALTER TABLE orders ADD COLUMN {col} TEXT DEFAULT {default}")
+        except Exception:
+            pass  # 列已存在
+
+    # 迁移后创建依赖新字段的索引
+    try:
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_orders_email ON orders(email)")
+    except Exception:
+        pass
+
+    await _ensure_column(db, "tasks", "result_assets", "result_assets TEXT NOT NULL DEFAULT '[]'")
+    await _ensure_column(db, "deliverables", "metadata_json", "metadata_json TEXT NOT NULL DEFAULT '{}'")
+
     await _seed_default_skus(db)
+    await _seed_default_scenes(db)
     await db.commit()
 
 
@@ -313,6 +391,25 @@ async def _seed_default_skus(db: aiosqlite.Connection) -> None:
         )
 
 
+async def _seed_default_scenes(db: aiosqlite.Connection) -> None:
+    for scene in _DEFAULT_SCENES:
+        await db.execute(
+            """
+            INSERT INTO scene_catalog (
+                scene_id, category, name, brief_ref, description, preview_url, active, sort_order
+            ) VALUES (?, ?, ?, ?, ?, '', 1, ?)
+            ON CONFLICT(scene_id) DO UPDATE SET
+                category=excluded.category,
+                name=excluded.name,
+                brief_ref=excluded.brief_ref,
+                description=excluded.description,
+                sort_order=excluded.sort_order
+            """,
+            (scene["scene_id"], scene["category"], scene["name"],
+             scene["brief_ref"], scene["description"], scene["sort_order"]),
+        )
+
+
 def _inflate_sku(row: aiosqlite.Row | None) -> dict | None:
     if row is None:
         return None
@@ -347,6 +444,7 @@ def _inflate_task(row: aiosqlite.Row | None) -> dict | None:
         return None
     payload = dict(row)
     payload["result_urls"] = _decode_json(payload.get("result_urls"), [])
+    payload["result_assets"] = _decode_json(payload.get("result_assets"), [])
     return payload
 
 
@@ -430,7 +528,101 @@ async def get_sku(sku_id: str) -> dict | None:
     return _inflate_sku(row)
 
 
-async def create_order(identity_id: str, package_id: str, sku_id: str) -> dict:
+async def list_scenes(active_only: bool = True) -> list[dict]:
+    db = await get_db()
+    where = "WHERE active = 1" if active_only else ""
+    cursor = await db.execute(
+        f"SELECT * FROM scene_catalog {where} ORDER BY sort_order ASC",
+    )
+    rows = await cursor.fetchall()
+    return [dict(row) for row in rows]
+
+
+async def get_scene(scene_id: str) -> dict | None:
+    db = await get_db()
+    cursor = await db.execute("SELECT * FROM scene_catalog WHERE scene_id = ?", (scene_id,))
+    row = await cursor.fetchone()
+    return dict(row) if row else None
+
+
+async def create_order_scene_selections(order_id: str, scene_ids: list[str]) -> None:
+    db = await get_db()
+    for idx, scene_id in enumerate(scene_ids):
+        sel_id = _id("sel")
+        await db.execute(
+            "INSERT INTO order_scene_selections (selection_id, order_id, scene_id, sort_order) VALUES (?, ?, ?, ?)",
+            (sel_id, order_id, scene_id, idx),
+        )
+    await db.commit()
+
+
+async def get_order_scene_selections(order_id: str) -> list[dict]:
+    db = await get_db()
+    cursor = await db.execute(
+        """
+        SELECT oss.*, sc.name, sc.category, sc.brief_ref
+        FROM order_scene_selections oss
+        JOIN scene_catalog sc ON sc.scene_id = oss.scene_id
+        WHERE oss.order_id = ?
+        ORDER BY oss.sort_order ASC
+        """,
+        (order_id,),
+    )
+    rows = await cursor.fetchall()
+    return [dict(row) for row in rows]
+
+
+async def verify_experience_code(code: str) -> dict | None:
+    db = await get_db()
+    cursor = await db.execute(
+        "SELECT * FROM experience_codes WHERE code = ? AND status = 'active'",
+        (code,),
+    )
+    row = await cursor.fetchone()
+    return dict(row) if row else None
+
+
+async def bind_experience_code(code_id: str, email: str, order_id: str) -> None:
+    db = await get_db()
+    await db.execute(
+        "UPDATE experience_codes SET status = 'used', bound_email = ?, bound_order_id = ?, used_at = datetime('now') WHERE code_id = ?",
+        (email, order_id, code_id),
+    )
+    await db.commit()
+
+
+async def create_experience_code(code: str, channel: str = "default") -> dict:
+    db = await get_db()
+    code_id = _id("exp")
+    await db.execute(
+        "INSERT INTO experience_codes (code_id, code, channel) VALUES (?, ?, ?)",
+        (code_id, code, channel),
+    )
+    await db.commit()
+    cursor = await db.execute("SELECT * FROM experience_codes WHERE code_id = ?", (code_id,))
+    row = await cursor.fetchone()
+    return dict(row)
+
+
+async def lookup_orders_by_email(email: str) -> list[dict]:
+    db = await get_db()
+    cursor = await db.execute(
+        "SELECT * FROM orders WHERE email = ? ORDER BY created_at DESC",
+        (email,),
+    )
+    rows = await cursor.fetchall()
+    return [_inflate_order(row) for row in rows]
+
+
+async def create_order(
+    identity_id: str,
+    sku_id: str,
+    *,
+    email: str = "",
+    scene_ids: list[str] | None = None,
+    experience_code_id: str | None = None,
+    package_id: str = "",
+) -> dict:
     sku = await get_sku(sku_id)
     if sku is None:
         raise ValueError(f"Unknown sku_id '{sku_id}'")
@@ -439,13 +631,17 @@ async def create_order(identity_id: str, package_id: str, sku_id: str) -> dict:
     order_id = _id("ord")
     payment_status = "free_granted" if sku["price"] == 0 else "unpaid"
     paid_at_sql = "datetime('now')" if sku["price"] == 0 else "NULL"
+    # package_id 向后兼容：如果传了 scene_ids，用第一个 scene 的 brief_ref 做 package_id
+    if not package_id and scene_ids:
+        first_scene = await get_scene(scene_ids[0])
+        package_id = first_scene["brief_ref"] if first_scene else ""
     await db.execute(
         f"""
         INSERT INTO orders (
             order_id, identity_id, sku_id, package_id, amount, currency,
             payment_status, fulfillment_status, service_status,
-            entitlement_snapshot_json, paid_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'not_started', 'normal', ?, {paid_at_sql})
+            entitlement_snapshot_json, paid_at, email, experience_code_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'not_started', 'normal', ?, {paid_at_sql}, ?, ?)
         """,
         (
             order_id,
@@ -456,9 +652,16 @@ async def create_order(identity_id: str, package_id: str, sku_id: str) -> dict:
             sku["currency"],
             payment_status,
             json.dumps(sku["entitlements"], ensure_ascii=False),
+            email,
+            experience_code_id,
         ),
     )
     await db.commit()
+
+    # 写入场景选择
+    if scene_ids:
+        await create_order_scene_selections(order_id, scene_ids)
+
     order = await get_order(order_id)
     if order is None:
         raise RuntimeError(f"Failed to create order '{order_id}'")
@@ -712,6 +915,7 @@ async def create_deliverable(
     quality_score: float,
     delivery_tier: str = "4k",
     photo_status: str = "delivered",
+    metadata: dict | None = None,
 ) -> dict:
     db = await get_db()
     deliverable_id = _id("dlv")
@@ -719,8 +923,8 @@ async def create_deliverable(
         """
         INSERT INTO deliverables (
             deliverable_id, order_id, batch_id, owner_id, storage_kind, storage_path,
-            url, photo_status, quality_score, delivery_tier
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            url, photo_status, quality_score, delivery_tier, metadata_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             deliverable_id,
@@ -733,6 +937,7 @@ async def create_deliverable(
             photo_status,
             quality_score,
             delivery_tier,
+            json.dumps(metadata or {}, ensure_ascii=False),
         ),
     )
     await db.commit()
@@ -745,7 +950,7 @@ async def list_deliverables(order_id: str) -> list[dict]:
     cursor = await db.execute(
         """
         SELECT deliverable_id, order_id, batch_id, url, photo_status, quality_score,
-               delivery_tier, created_at
+               delivery_tier, metadata_json, created_at
         FROM deliverables
         WHERE order_id = ?
         ORDER BY created_at ASC
@@ -753,7 +958,12 @@ async def list_deliverables(order_id: str) -> list[dict]:
         (order_id,),
     )
     rows = await cursor.fetchall()
-    return [dict(row) for row in rows]
+    items: list[dict] = []
+    for row in rows:
+        payload = dict(row)
+        payload["metadata"] = _decode_json(payload.pop("metadata_json", "{}"), {})
+        items.append(payload)
+    return items
 
 
 async def list_deliverable_retention_records() -> list[dict]:
@@ -812,6 +1022,7 @@ async def update_task(
     quality_score: float | None = None,
     message: str | None = None,
     result_urls: list[str] | None = None,
+    result_assets: list[dict] | None = None,
 ) -> None:
     db = await get_db()
     updates = []
@@ -832,6 +1043,9 @@ async def update_task(
     if result_urls is not None:
         updates.append("result_urls = ?")
         params.append(json.dumps(result_urls, ensure_ascii=False))
+    if result_assets is not None:
+        updates.append("result_assets = ?")
+        params.append(json.dumps(result_assets, ensure_ascii=False))
 
     if not updates:
         return

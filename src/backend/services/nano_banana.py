@@ -277,7 +277,7 @@ class NanoBananaService:
         )
         prepared_image, prepared_mime = prepared_bundle[0]
         return await self._generate_from_parts(
-            [{"text": prompt}, self._inline_image_part(prepared_image, prepared_mime)],
+            [self._inline_image_part(prepared_image, prepared_mime), {"text": prompt}],
             aspect_ratio=aspect_ratio,
             size=size,
             timeout=settings.nano_timeout_seconds,
@@ -335,8 +335,8 @@ class NanoBananaService:
             max_images=1,
         )
         parts: list[dict] = [
-            {"text": prompt},
             self._inline_image_part(*prepared_current_bundle[0]),
+            {"text": prompt},
         ]
         prepared_refs = self._prepare_reference_bundle(
             refs,

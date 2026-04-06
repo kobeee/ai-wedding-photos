@@ -163,16 +163,21 @@ export default function Makeup() {
         groom: groomStyle,
         bride: brideStyle,
       },
+      selectedMakeupReferences: {
+        groom: images.groom[groomStyles.findIndex(style => style.id === groomStyle)],
+        bride: images.bride[brideStyles.findIndex(style => style.id === brideStyle)],
+      },
     })
 
     startTransition(() => {
-      navigate('/package')
+      navigate('/waiting')
     })
   }
 
   const handleRetry = () => {
     updateWorkflowState({
       makeupOptions: undefined,
+      selectedMakeupReferences: undefined,
     })
     setImages(EMPTY_IMAGES)
     setIsLoading(true)
@@ -182,7 +187,7 @@ export default function Makeup() {
 
   return (
     <div className="makeup-page">
-      <StepHeader current={2} onClose={() => navigate('/')} />
+      <StepHeader current={4} onClose={() => navigate('/')} />
       <main className="makeup-main">
         <div className="makeup-title">
           <h1>哪一个是您今天想要的状态？</h1>
@@ -274,7 +279,7 @@ export default function Makeup() {
         <div className="makeup-bottom">
           <button className="btn btn--outline-light" onClick={() => navigate('/upload')}>上一步</button>
           <button className="btn btn--gold" onClick={handleContinue} disabled={isLoading || !isReady}>
-            {isLoading ? '正在生成试妆...' : '下一步：选择套餐'}
+            {isLoading ? '正在生成试妆...' : '下一步：开始生成'}
           </button>
         </div>
       </main>

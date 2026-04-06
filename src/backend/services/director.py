@@ -245,6 +245,7 @@ class DirectorService:
             slots=slots,
             has_refs=True,
             has_couple_refs=(gender == "couple"),
+            identity_priority=True,
         )
 
         legacy_schema = CameraSchema(

@@ -82,19 +82,94 @@ class ContextEngineeringTests(unittest.TestCase):
         self.assertEqual(decision.mode, RepairMode.reject)
 
     def test_thresholds_allow_borderline_soft_pass_on_final_round(self) -> None:
+        # SSS floor: MIN_DELIVERY_FLOOR = 0.85, avg must be >= 0.85
         decision = decide_repair(
             hard_fail=False,
-            identity_match=0.84,
-            brief_alignment=0.71,
-            aesthetic_score=0.69,
+            identity_match=0.88,
+            brief_alignment=0.86,
+            aesthetic_score=0.83,
             fix_round=2,
             max_rounds=3,
         )
+        # avg = (0.88+0.86+0.83)/3 = 0.8567 >= 0.85 → deliver
         self.assertEqual(decision.mode, RepairMode.deliver)
+
+    def test_hero_track_relaxed_identity_floor(self) -> None:
+        # Hero track: identity 0.72 >= HERO_IDENTITY_MATCH_FLOOR(0.70) → 不会 regenerate
+        # Validation track: 0.72 < IDENTITY_MATCH_FLOOR(0.80) → regenerate
+        hero_decision = decide_repair(
+            hard_fail=False,
+            identity_match=0.72,
+            brief_alignment=0.86,
+            aesthetic_score=0.88,
+            fix_round=0,
+            max_rounds=3,
+            track="hero",
+        )
+        val_decision = decide_repair(
+            hard_fail=False,
+            identity_match=0.72,
+            brief_alignment=0.86,
+            aesthetic_score=0.88,
+            fix_round=0,
+            max_rounds=3,
+            track="validation",
+        )
+        self.assertNotEqual(hero_decision.mode, RepairMode.regenerate)
+        self.assertEqual(val_decision.mode, RepairMode.regenerate)
+
+    def test_hero_track_relaxed_soft_pass_floor(self) -> None:
+        # avg = (0.85+0.86+0.85)/3 = 0.853 >= HERO_SOFT_PASS_FLOOR(0.85) → deliver
+        # Same scores on validation: 0.853 < SOFT_PASS_FLOOR(0.90) → local_fix
+        hero_decision = decide_repair(
+            hard_fail=False,
+            identity_match=0.85,
+            brief_alignment=0.86,
+            aesthetic_score=0.85,
+            fix_round=0,
+            max_rounds=3,
+            track="hero",
+        )
+        val_decision = decide_repair(
+            hard_fail=False,
+            identity_match=0.85,
+            brief_alignment=0.86,
+            aesthetic_score=0.85,
+            fix_round=0,
+            max_rounds=3,
+            track="validation",
+        )
+        self.assertEqual(hero_decision.mode, RepairMode.deliver)
+        self.assertEqual(val_decision.mode, RepairMode.local_fix)
+
+    def test_hero_track_relaxed_delivery_floor(self) -> None:
+        # avg = (0.82+0.80+0.79)/3 = 0.803 >= HERO_MIN_DELIVERY_FLOOR(0.80) → deliver on final
+        # Same on validation: 0.803 < MIN_DELIVERY_FLOOR(0.85) → reject
+        hero_decision = decide_repair(
+            hard_fail=False,
+            identity_match=0.82,
+            brief_alignment=0.80,
+            aesthetic_score=0.79,
+            fix_round=2,
+            max_rounds=3,
+            track="hero",
+        )
+        val_decision = decide_repair(
+            hard_fail=False,
+            identity_match=0.82,
+            brief_alignment=0.80,
+            aesthetic_score=0.79,
+            fix_round=2,
+            max_rounds=3,
+            track="validation",
+        )
+        self.assertEqual(hero_decision.mode, RepairMode.deliver)
+        self.assertEqual(val_decision.mode, RepairMode.reject)
 
     def test_delivery_floor_blocks_low_score(self) -> None:
         self.assertFalse(meets_delivery_floor(0.50))
-        self.assertTrue(meets_delivery_floor(0.72))
+        self.assertFalse(meets_delivery_floor(0.84))  # below 0.85
+        self.assertTrue(meets_delivery_floor(0.85))
 
     def test_reference_selector_keeps_bride_and_groom_when_metadata_exists(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -143,8 +218,7 @@ class ContextEngineeringTests(unittest.TestCase):
 
         self.assertTrue(selected.has_couple_anchor)
         self.assertEqual(selected.primary[0].role, "couple")
-        self.assertEqual(selected.primary[1].role, "bride")
-        self.assertEqual(selected.primary[2].role, "groom")
+        self.assertEqual({selected.primary[1].role, selected.primary[2].role}, {"bride", "groom"})
         self.assertEqual(selected.selected_role_counts["couple"], 1)
         self.assertLessEqual(selected.count, 4)
 
@@ -179,6 +253,25 @@ class ContextEngineeringTests(unittest.TestCase):
         )
 
         self.assertIn("The first reference image is a full-body couple photo.", prompt)
+
+    def test_prompt_assembler_blocks_mirrored_profiles_for_close_couple(self) -> None:
+        brief = get_brief("iceland")
+        variant = brief.variants[0]
+        slots = render_slots(gender="couple")
+
+        prompt = assemble_generation_prompt(
+            brief=brief,
+            variant=variant,
+            slots=slots,
+            has_refs=True,
+            has_couple_refs=True,
+            has_couple_anchor=True,
+        )
+
+        self.assertIn("mirrored side profiles", prompt)
+        self.assertIn("both faces readable in open three-quarter view", prompt)
+        self.assertIn("both eyes visible", prompt)
+        self.assertIn("Standing close with shoulders opened slightly toward camera", prompt)
 
     def test_vlm_fallback_blocks_delivery(self) -> None:
         report = VLMCheckerService._fallback_report("service unavailable")

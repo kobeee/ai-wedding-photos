@@ -37,6 +37,8 @@ class SlotPayload:
     """渲染后的动态插槽内容，每个字段都是可直接嵌入 prompt 的英文片段。"""
 
     makeup: str = ""
+    bride_makeup: str = ""
+    groom_makeup: str = ""
     pairing: str = ""
     user_preference: str = ""
 
@@ -45,14 +47,22 @@ def render_slots(
     makeup_style: str = "natural",
     gender: str = "couple",
     preferences: dict | None = None,
+    bride_makeup_style: str | None = None,
+    groom_makeup_style: str | None = None,
 ) -> SlotPayload:
     """将原始参数渲染为 prompt 可用的文本片段。"""
 
-    # 男性用男性专用妆造描述
+    bride_style = bride_makeup_style or makeup_style
+    groom_style = groom_makeup_style or makeup_style
+    bride_makeup = _MAKEUP_DESCRIPTIONS.get(bride_style, _MAKEUP_DESCRIPTIONS["natural"])
+    groom_makeup = _MAKEUP_DESCRIPTIONS_MALE.get(groom_style, _MAKEUP_DESCRIPTIONS_MALE["natural"])
+
     if gender == "male":
-        makeup = _MAKEUP_DESCRIPTIONS_MALE.get(makeup_style, _MAKEUP_DESCRIPTIONS_MALE["natural"])
+        makeup = groom_makeup
+    elif gender == "female":
+        makeup = bride_makeup
     else:
-        makeup = _MAKEUP_DESCRIPTIONS.get(makeup_style, _MAKEUP_DESCRIPTIONS["natural"])
+        makeup = f"Bride makeup: {bride_makeup}. Groom grooming: {groom_makeup}"
 
     # 性别 → pairing 描述
     pairing = _PAIRING_DESCRIPTIONS.get(gender, _PAIRING_DESCRIPTIONS["couple"])
@@ -67,6 +77,8 @@ def render_slots(
 
     return SlotPayload(
         makeup=makeup,
+        bride_makeup=bride_makeup,
+        groom_makeup=groom_makeup,
         pairing=pairing,
         user_preference=". ".join(pref_parts),
     )

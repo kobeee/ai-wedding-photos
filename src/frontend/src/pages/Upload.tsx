@@ -422,8 +422,7 @@ export default function Upload() {
             uploadsComplete: true,
             makeupOptions: undefined,
             selectedMakeup: undefined,
-            selectedPackage: undefined,
-            selectedSku: undefined,
+            selectedMakeupReferences: undefined,
             orderId: undefined,
             paymentId: undefined,
             orderPaymentStatus: undefined,
@@ -504,8 +503,7 @@ export default function Upload() {
       uploadsComplete: false,
       makeupOptions: undefined,
       selectedMakeup: undefined,
-      selectedPackage: undefined,
-      selectedSku: undefined,
+      selectedMakeupReferences: undefined,
       orderId: undefined,
       paymentId: undefined,
       orderPaymentStatus: undefined,
@@ -710,7 +708,7 @@ export default function Upload() {
 
   return (
     <div className="upload-page">
-      <StepHeader current={1} onClose={() => navigate('/')} />
+      <StepHeader current={3} onClose={() => navigate('/')} />
 
       <main className="upload-main">
         <section className="upload-title">

@@ -82,11 +82,31 @@ class DeliveryTier(str, Enum):
     four_k = "4k"
 
 
+class RenderTrack(str, Enum):
+    validation = "validation"
+    hero = "hero"
+    face_lock = "face_lock"
+
+
+class DeliverableKind(str, Enum):
+    validation_safe = "validation-safe"
+    hero_atmosphere = "hero-atmosphere"
+
+
 class PackageCategory(str, Enum):
     chinese = "chinese"
     western = "western"
     artistic = "artistic"
     travel = "travel"
+
+
+class SceneCategory(str, Enum):
+    western = "western"
+    chinese = "chinese"
+    travel = "travel"
+    studio = "studio"
+    night = "night"
+    fantasy = "fantasy"
 
 
 class IssueCategory(str, Enum):
@@ -115,6 +135,17 @@ class QualityIssue(BaseModel):
     description: str
     category: IssueCategory
     severity: float = Field(0.5, ge=0.0, le=1.0, description="严重程度 0-1")
+
+
+class VerifiabilityAssessment(BaseModel):
+    """V11 可验证性指标。"""
+
+    is_identity_verifiable: bool = False
+    is_proportion_verifiable: bool = False
+    face_area_ratio_bride: float = Field(0.0, ge=0.0, le=1.0)
+    face_area_ratio_groom: float = Field(0.0, ge=0.0, le=1.0)
+    body_visibility_score: float = Field(0.0, ge=0.0, le=1.0)
+    notes: list[str] = Field(default_factory=list)
 
 
 # ---- Upload ----
@@ -165,14 +196,29 @@ class GenerateRequest(BaseModel):
     user_id: str = Field(..., description="用户ID")
     package_id: str = Field(..., description="套餐ID")
     makeup_style: Optional[MakeupStyle] = Field(None, description="妆造风格（来自试妆步骤）")
+    groom_makeup_style: Optional[MakeupStyle] = Field(None, description="新郎妆造风格")
+    bride_makeup_style: Optional[MakeupStyle] = Field(None, description="新娘妆造风格")
     gender: Optional[Gender] = Field(None, description="性别")
     groom_style: Optional[str] = Field(None, description="新郎风格描述")
     bride_style: Optional[str] = Field(None, description="新娘风格描述")
+    groom_makeup_reference_url: Optional[str] = Field(None, description="新郎选中的试妆参考图 URL")
+    bride_makeup_reference_url: Optional[str] = Field(None, description="新娘选中的试妆参考图 URL")
 
 
 class GenerateResponse(BaseModel):
     task_id: str
     status: TaskStatusEnum = TaskStatusEnum.pending
+
+
+class ResultAssetInfo(BaseModel):
+    url: str
+    kind: DeliverableKind = DeliverableKind.hero_atmosphere
+    track: RenderTrack = RenderTrack.hero
+    quality_score: float = Field(0.0, ge=0.0, le=1.0)
+    user_visible: bool = True
+    delivery_tier: DeliveryTier = DeliveryTier.four_k
+    verifiability: VerifiabilityAssessment = Field(default_factory=VerifiabilityAssessment)
+    notes: list[str] = Field(default_factory=list)
 
 
 class TaskStatus(BaseModel):
@@ -182,6 +228,7 @@ class TaskStatus(BaseModel):
     message: str = ""
     quality_score: float = Field(0.0, ge=0.0, le=1.0, description="综合质量评分")
     result_urls: list[str] = Field(default_factory=list)
+    result_assets: list[ResultAssetInfo] = Field(default_factory=list)
 
 
 # ---- Package ----
@@ -219,9 +266,27 @@ class SkuInfo(BaseModel):
     entitlements: EntitlementSnapshot
 
 
+class SceneInfo(BaseModel):
+    scene_id: str
+    category: SceneCategory
+    name: str
+    brief_ref: str = ""
+    description: str = ""
+    preview_url: str = ""
+    active: bool = True
+    sort_order: int = 0
+
+
+class SceneListResponse(BaseModel):
+    items: list[SceneInfo]
+
+
 class OrderCreateRequest(BaseModel):
-    package_id: str = Field(..., description="视觉主题")
-    sku_id: str = Field(..., description="销售 SKU")
+    sku_id: str = Field(..., description="销售 SKU / Plan ID")
+    email: str = Field("", description="用户邮箱，用于交付和找回")
+    scene_ids: list[str] = Field(default_factory=list, description="用户选择的景别ID列表")
+    experience_code: Optional[str] = Field(None, description="体验码（免费套餐需要）")
+    package_id: str = Field("", description="向后兼容，可选")
 
 
 class GenerationBatchInfo(BaseModel):
@@ -250,6 +315,7 @@ class DeliverableInfo(BaseModel):
     photo_status: str = "delivered"
     quality_score: float = 0.0
     delivery_tier: DeliveryTier = DeliveryTier.four_k
+    metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: str
 
 
@@ -258,6 +324,7 @@ class OrderInfo(BaseModel):
     identity_id: str
     sku_id: str
     package_id: str
+    email: str = ""
     amount: int = 0
     currency: str = "CNY"
     payment_status: PaymentStatus
@@ -274,6 +341,7 @@ class OrderInfo(BaseModel):
     remaining_reruns: int = 0
     package_name: str = ""
     sku_name: str = ""
+    scene_selections: list[OrderSceneSelection] = Field(default_factory=list)
 
 
 class PaymentSessionResponse(BaseModel):
@@ -301,9 +369,13 @@ class StartOrderResponse(BaseModel):
 
 class StartOrderRequest(BaseModel):
     makeup_style: Optional[MakeupStyle] = None
+    groom_makeup_style: Optional[MakeupStyle] = None
+    bride_makeup_style: Optional[MakeupStyle] = None
     gender: Optional[Gender] = None
     groom_style: Optional[str] = None
     bride_style: Optional[str] = None
+    groom_makeup_reference_url: Optional[str] = None
+    bride_makeup_reference_url: Optional[str] = None
 
 
 class BatchListResponse(BaseModel):
@@ -316,6 +388,29 @@ class DeliverableListResponse(BaseModel):
 
 class OrderListResponse(BaseModel):
     items: list[OrderInfo]
+
+
+class ExperienceCodeVerifyRequest(BaseModel):
+    code: str = Field(..., description="体验码")
+
+
+class ExperienceCodeVerifyResponse(BaseModel):
+    valid: bool
+    code: str
+    channel: str = ""
+    message: str = ""
+
+
+class OrderLookupRequest(BaseModel):
+    email: str = Field(..., description="用户邮箱")
+
+
+class OrderSceneSelection(BaseModel):
+    scene_id: str
+    name: str = ""
+    category: str = ""
+    brief_ref: str = ""
+    sort_order: int = 0
 
 
 class MockPayCreateRequest(BaseModel):

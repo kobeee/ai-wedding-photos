@@ -217,9 +217,72 @@ export async function apiRequest<T>(
   return (await response.json()) as T
 }
 
+export interface SceneInfo {
+  scene_id: string
+  category: string
+  name: string
+  brief_ref: string
+  description: string
+  preview_url: string
+  active: boolean
+  sort_order: number
+}
+
+export interface SceneListResponse {
+  items: SceneInfo[]
+}
+
+export interface ExperienceCodeVerifyResponse {
+  valid: boolean
+  code: string
+  channel: string
+  message: string
+}
+
+export interface OrderSceneSelection {
+  scene_id: string
+  name: string
+  category: string
+  brief_ref: string
+  sort_order: number
+}
+
 export async function fetchLatestOrder(): Promise<OrderInfo | null> {
   const payload = await apiRequest<OrderListResponse>('/api/orders')
   return payload.items[0] ?? null
+}
+
+export async function fetchPlans(): Promise<SkuInfo[]> {
+  return apiRequest<SkuInfo[]>('/api/plans')
+}
+
+export async function fetchScenes(): Promise<SceneListResponse> {
+  return apiRequest<SceneListResponse>('/api/scenes')
+}
+
+export async function verifyExperienceCode(code: string): Promise<ExperienceCodeVerifyResponse> {
+  return apiRequest<ExperienceCodeVerifyResponse>('/api/experience-codes/verify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  })
+}
+
+export async function lookupOrdersByEmail(email: string): Promise<OrderListResponse> {
+  return apiRequest<OrderListResponse>(`/api/orders/lookup?email=${encodeURIComponent(email)}`)
+}
+
+export async function createOrder(params: {
+  sku_id: string
+  email: string
+  scene_ids: string[]
+  experience_code?: string
+}): Promise<OrderInfo> {
+  return apiRequest<OrderInfo>('/api/orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  })
 }
 
 export function formatPrice(amount: number, currency = 'CNY'): string {

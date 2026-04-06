@@ -1,0 +1,235 @@
+.plan-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(201, 169, 110, 0.14), transparent 28%),
+    linear-gradient(180deg, #0c0b0a 0%, #0a0a0a 100%);
+}
+
+.plan-main {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 40px 32px 72px;
+}
+
+.plan-hero {
+  margin-bottom: 36px;
+}
+
+.plan-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-gold);
+  color: var(--accent-gold-light);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.plan-hero h1 {
+  margin-top: 18px;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.05;
+}
+
+.plan-hero p {
+  margin-top: 14px;
+  max-width: 720px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.plan-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  margin-bottom: 36px;
+}
+
+.plan-card {
+  text-align: left;
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(30, 28, 26, 0.88);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s, background 0.2s;
+}
+
+.plan-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(201, 169, 110, 0.28);
+}
+
+.plan-card--active {
+  border-color: var(--accent-gold);
+  background: linear-gradient(135deg, rgba(201, 169, 110, 0.14), rgba(30, 28, 26, 0.95));
+}
+
+.plan-card--highlight {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24);
+}
+
+.plan-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.plan-card__tag {
+  color: var(--accent-gold-light);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.plan-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(201, 169, 110, 0.18);
+  color: var(--accent-gold-light);
+  font-size: 12px;
+}
+
+.plan-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.plan-card__price {
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 8px 0;
+}
+
+.plan-card__desc {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  white-space: pre-line;
+  font-size: 14px;
+}
+
+.plan-card__features {
+  margin-top: 14px;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.plan-card__features li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.plan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 560px;
+  margin-bottom: 24px;
+}
+
+.plan-form__field label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.plan-form__field input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(20, 18, 16, 0.92);
+  color: var(--text-primary);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.plan-form__field input:focus {
+  border-color: var(--accent-gold);
+}
+
+.plan-form__code-row {
+  display: flex;
+  gap: 10px;
+}
+
+.plan-form__code-row input {
+  flex: 1;
+}
+
+.plan-form__code-row .btn {
+  white-space: nowrap;
+  padding: 12px 20px;
+  border-radius: 14px;
+  font-size: 14px;
+}
+
+.plan-form__msg {
+  font-size: 13px;
+  margin-top: 6px;
+  display: block;
+}
+
+.plan-form__msg--ok {
+  color: #7ecfa0;
+}
+
+.plan-form__msg--err {
+  color: #f3caca;
+}
+
+.plan-error {
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(196, 112, 112, 0.12);
+  border: 1px solid rgba(196, 112, 112, 0.26);
+  color: #f3caca;
+  margin-bottom: 20px;
+}
+
+.plan-loading {
+  text-align: center;
+  padding: 80px 0;
+  color: var(--text-muted);
+}
+
+.plan-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .plan-main {
+    padding: 24px 18px 56px;
+  }
+
+  .plan-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-card {
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .plan-bottom {
+    flex-direction: column;
+  }
+}

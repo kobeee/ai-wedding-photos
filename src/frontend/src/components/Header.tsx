@@ -26,7 +26,7 @@ export default function Header({ variant = 'landing' }: { variant?: 'landing' | 
         <a href="#pricing">套餐</a>
         <a href="#faq">常见问题</a>
       </nav>
-      <Link to="/upload" className="header__cta">开始创作</Link>
+      <Link to="/plan" className="header__cta">开始创作</Link>
     </header>
   )
 }

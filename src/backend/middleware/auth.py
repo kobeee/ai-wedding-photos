@@ -18,6 +18,10 @@ _PUBLIC_PATHS = frozenset({
     "/api/upload",       # 上传时生成 token
     "/api/packages",     # 套餐列表公开
     "/api/skus",         # SKU 列表公开
+    "/api/plans",        # 套餐列表（别名）
+    "/api/scenes",       # 景别目录公开
+    "/api/experience-codes",  # 体验码验证公开
+    "/api/orders/lookup",     # 邮箱找回订单公开
     "/docs",
     "/openapi.json",
     "/redoc",

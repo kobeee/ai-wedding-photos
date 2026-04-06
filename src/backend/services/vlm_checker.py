@@ -19,7 +19,7 @@ import httpx
 from PIL import Image
 
 from config import settings
-from models.schemas import IssueCategory, QualityIssue
+from models.schemas import IssueCategory, QualityIssue, RenderTrack, VerifiabilityAssessment
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +100,7 @@ class QualityReport:
 
     # 修复建议（由 VLM 直接给出）
     repair_hints: list[str] = field(default_factory=list)
+    verifiability: VerifiabilityAssessment = field(default_factory=VerifiabilityAssessment)
 
     @property
     def physical_issues(self) -> list[QualityIssue]:
@@ -123,9 +124,10 @@ You are a demanding wedding photography director reviewing an AI-generated image
 
 You evaluate THREE dimensions independently:
 
-1. **identity_match** (0.0-1.0): Does the person in the generated image look like \
-the same person from the reference photos? Score facial similarity, skin tone, \
-body proportions. If no reference was provided, score 0.85 by default.
+1. **identity_match** (0.0-1.0): The first image is the generated result. Any later images are \
+reference photos of the real person or couple. Does the generated image look like the same \
+person or couple? Score facial similarity, skin tone, and body proportions. If no reference \
+photos are provided after the generated image, score 0.85 by default.
 
 2. **brief_alignment** (0.0-1.0): Does the image match the creative intent? \
 Is the scene, mood, wardrobe, and overall narrative consistent with what was requested?
@@ -139,6 +141,15 @@ Also check for **hard failures** — issues that MUST be fixed before delivery:
 - Severely distorted facial structure
 - Major background artifacts (text, watermarks, impossible objects)
 - Person is blurry or unrecognizable
+- In a couple portrait, either partner's face is too hidden, too profile-heavy, or too occluded to verify identity
+- One or both subjects have only one eye visible because of angle, hair, hands, or the other person's face
+- Gaze direction is incoherent for the intended emotional beat, making the relationship read as awkward or staged
+- Environmental color cast pushes facial skin tones far away from natural, believable skin
+
+Couple-specific scoring guidance:
+- If one partner is shown in a hard side profile and likeness cannot be verified, identity_match must drop sharply.
+- If the crop is too tight to verify relative height/build against couple references, mention that limitation explicitly in issues.
+- Do not reward atmosphere if the image hides the very facial landmarks needed to prove likeness.
 
 Respond ONLY with this JSON (no markdown, no explanation):
 {
@@ -146,6 +157,14 @@ Respond ONLY with this JSON (no markdown, no explanation):
   "identity_match": 0.0-1.0,
   "brief_alignment": 0.0-1.0,
   "aesthetic_score": 0.0-1.0,
+  "verifiability": {
+    "is_identity_verifiable": true/false,
+    "is_proportion_verifiable": true/false,
+    "face_area_ratio_bride": 0.0-1.0,
+    "face_area_ratio_groom": 0.0-1.0,
+    "body_visibility_score": 0.0-1.0,
+    "notes": ["short reason 1", "short reason 2"]
+  },
   "issues": [
     {"description": "...", "category": "physical" or "emotional", "severity": 0.0-1.0, "blocking": true/false}
   ],
@@ -214,7 +233,12 @@ class VLMCheckerService:
         self,
         image_data: bytes,
         brief_summary: str = "",
+        original_prompt: str = "",
         mime_type: str = "image/png",
+        reference_images: list[tuple[bytes, str]] | None = None,
+        track: RenderTrack = RenderTrack.hero,
+        validation_anchor: VerifiabilityAssessment | None = None,
+        gender: str = "couple",
     ) -> QualityReport:
         """对一张图片执行质检，可选传入创意意图摘要。"""
         self._check_api_key()
@@ -241,9 +265,74 @@ class VLMCheckerService:
         user_parts: list[dict] = [
             {"type": "image_url", "image_url": {"url": data_uri}},
         ]
+        if reference_images:
+            for ref_data, ref_mime in reference_images:
+                prepared_ref, prepared_ref_mime, _, _ = self._prepare_image_for_request(ref_data, ref_mime)
+                user_parts.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{prepared_ref_mime};base64,{base64.b64encode(prepared_ref).decode()}",
+                        },
+                    }
+                )
         user_text = "Review this AI-generated wedding photo."
         if brief_summary:
             user_text += f"\n\nCreative intent: {brief_summary}"
+        if original_prompt:
+            user_text += f"\n\nOriginal render instructions to preserve: {original_prompt}"
+        if reference_images:
+            user_text += (
+                "\n\nImage order: image 1 is the generated result. Later images are the identity "
+                "references that must be matched."
+            )
+        is_solo = gender in ("female", "male")
+        if track == RenderTrack.validation:
+            if is_solo:
+                role = "bride" if gender == "female" else "groom"
+                face_key = "face_area_ratio_bride" if gender == "female" else "face_area_ratio_groom"
+                user_text += (
+                    f"\n\nTrack goal: this is a VALIDATION-track render for commercial identity verification of a SOLO {role} portrait. "
+                    "Apply STRICT standards:\n"
+                    f"- face_area_ratio = approximate fraction of total image area occupied by the {role}'s face\n"
+                    "- A face that is a tiny dot scores ~0.01; a well-framed medium portrait scores ~0.08-0.15\n"
+                    f"- is_identity_verifiable = true ONLY if the {role}'s face is frontal/open-3/4 with both eyes clearly visible "
+                    "AND face area is large enough to compare against reference photos\n"
+                    "- is_proportion_verifiable = true ONLY if you can see enough body (at least waist-up) to verify head-body ratio\n"
+                    "- body_visibility_score: 1.0 = full body; 0.7 = waist-up; 0.5 = chest-up; 0.3 = face only\n"
+                    f"- Set the OTHER person's face_area_ratio to 0.0 (this is a solo portrait, only score the {role})\n"
+                    "Be conservative — when in doubt, fail the verification."
+                )
+            else:
+                user_text += (
+                    "\n\nTrack goal: this is a VALIDATION-track render for commercial identity verification of a COUPLE. "
+                    "Apply STRICT standards:\n"
+                    "- face_area_ratio = approximate fraction of total image area occupied by each face\n"
+                    "- A face that is a tiny dot in a landscape scores ~0.01; a well-framed medium portrait scores ~0.08-0.15\n"
+                    "- is_identity_verifiable = true ONLY if BOTH faces are frontal/open-3/4 with both eyes clearly visible "
+                    "AND face area is large enough to compare against reference photos\n"
+                    "- is_proportion_verifiable = true ONLY if you can clearly determine relative height, head-body ratio, "
+                    "and shoulder line between BOTH partners\n"
+                    "- body_visibility_score: 1.0 = full body from head to toe; 0.7 = waist-up; 0.5 = chest-up; 0.3 = face only\n"
+                    "- If heavy backlighting silhouettes a face, set is_identity_verifiable to false\n"
+                    "- If one face is in profile or partially hidden, set that person's face_area_ratio to 0.0\n"
+                    "Be conservative — when in doubt, fail the verification rather than pass it."
+                )
+        else:
+            user_text += (
+                "\n\nTrack goal: this is a hero-track render. Atmosphere and visual impact matter, "
+                "but identity must still be assessable. If a face is too small (< 2.5% of image area), "
+                "in hard profile, or hidden by shadow/backlighting, set is_identity_verifiable to false. "
+                "A beautiful photo that cannot prove it depicts the real person has limited commercial value."
+            )
+            if validation_anchor is not None:
+                user_text += (
+                    "\n\nValidation-track anchor already passed with: "
+                    f"identity_verifiable={validation_anchor.is_identity_verifiable}, "
+                    f"proportion_verifiable={validation_anchor.is_proportion_verifiable}, "
+                    f"body_visibility_score={validation_anchor.body_visibility_score:.2f}. "
+                    "The hero render must not contradict those proven constraints."
+                )
         user_parts.append({"type": "text", "text": user_text})
 
         payload = {
@@ -328,6 +417,28 @@ class VLMCheckerService:
             if isinstance(repair_hints, str):
                 repair_hints = [repair_hints]
 
+            raw_verifiability = result.get("verifiability")
+            if not isinstance(raw_verifiability, dict):
+                raw_verifiability = {
+                    "is_identity_verifiable": result.get("is_identity_verifiable", False),
+                    "is_proportion_verifiable": result.get("is_proportion_verifiable", False),
+                    "face_area_ratio_bride": result.get("face_area_ratio_bride", 0.0),
+                    "face_area_ratio_groom": result.get("face_area_ratio_groom", 0.0),
+                    "body_visibility_score": result.get("body_visibility_score", 0.0),
+                    "notes": result.get("verifiability_notes", []),
+                }
+            notes = raw_verifiability.get("notes", [])
+            if isinstance(notes, str):
+                notes = [notes]
+            verifiability = VerifiabilityAssessment(
+                is_identity_verifiable=bool(raw_verifiability.get("is_identity_verifiable", False)),
+                is_proportion_verifiable=bool(raw_verifiability.get("is_proportion_verifiable", False)),
+                face_area_ratio_bride=float(raw_verifiability.get("face_area_ratio_bride", 0.0) or 0.0),
+                face_area_ratio_groom=float(raw_verifiability.get("face_area_ratio_groom", 0.0) or 0.0),
+                body_visibility_score=float(raw_verifiability.get("body_visibility_score", 0.0) or 0.0),
+                notes=list(notes),
+            )
+
             passed = not hard_fail and score >= 0.80
 
             return QualityReport(
@@ -340,10 +451,62 @@ class VLMCheckerService:
                 issues=issues,
                 suggestions=result.get("suggestions", []),
                 repair_hints=repair_hints,
+                verifiability=verifiability,
             )
         except (json.JSONDecodeError, ValueError):
             logger.warning("Failed to parse VLM report, raw: %s", raw_content[:200])
+            # 尝试从截断的 JSON 中提取关键字段（max_tokens 不足时常见）
+            return self._rescue_truncated_report(raw_content)
+
+    def _rescue_truncated_report(self, raw: str) -> QualityReport:
+        """从被截断的 JSON 中尽力提取关键数值字段。"""
+        import re
+
+        def _extract_float(key: str, default: float = 0.0) -> float:
+            m = re.search(rf'"{key}"\s*:\s*([0-9]+\.?[0-9]*)', raw)
+            return float(m.group(1)) if m else default
+
+        def _extract_bool(key: str, default: bool = False) -> bool:
+            m = re.search(rf'"{key}"\s*:\s*(true|false)', raw, re.IGNORECASE)
+            return m.group(1).lower() == "true" if m else default
+
+        identity = _extract_float("identity_match", 0.0)
+        alignment = _extract_float("brief_alignment", 0.0)
+        aesthetic = _extract_float("aesthetic_score", 0.0)
+        hard_fail = _extract_bool("hard_fail", False)
+
+        # 至少需要提取到 identity_match 才算有效
+        if identity == 0.0 and alignment == 0.0 and aesthetic == 0.0:
+            logger.warning("Truncated JSON rescue failed: no scores found")
             return self._fallback_report("Quality report parsing failed")
+
+        verifiability = VerifiabilityAssessment(
+            is_identity_verifiable=_extract_bool("is_identity_verifiable", False),
+            is_proportion_verifiable=_extract_bool("is_proportion_verifiable", False),
+            face_area_ratio_bride=_extract_float("face_area_ratio_bride", 0.0),
+            face_area_ratio_groom=_extract_float("face_area_ratio_groom", 0.0),
+            body_visibility_score=_extract_float("body_visibility_score", 0.0),
+            notes=["rescued from truncated VLM response"],
+        )
+
+        score = (identity + alignment + aesthetic) / 3
+        passed = not hard_fail and score >= 0.80
+        logger.info(
+            "Rescued truncated VLM report: id=%.2f align=%.2f aes=%.2f hard_fail=%s",
+            identity, alignment, aesthetic, hard_fail,
+        )
+        return QualityReport(
+            passed=passed,
+            score=score,
+            hard_fail=hard_fail,
+            identity_match=identity,
+            brief_alignment=alignment,
+            aesthetic_score=aesthetic,
+            issues=[],
+            suggestions=[],
+            repair_hints=[],
+            verifiability=verifiability,
+        )
 
     @staticmethod
     def _guess_category(description: str) -> IssueCategory:
@@ -382,6 +545,7 @@ class VLMCheckerService:
             brief_alignment=0.0,
             aesthetic_score=0.0,
             inspection_unavailable=True,
+            verifiability=VerifiabilityAssessment(),
             issues=[QualityIssue(
                 description=reason,
                 category=IssueCategory.physical,
@@ -396,9 +560,22 @@ class VLMCheckerService:
         original_prompt: str,
         brief_summary: str = "",
         mime_type: str = "image/png",
+        reference_images: list[tuple[bytes, str]] | None = None,
+        track: RenderTrack = RenderTrack.hero,
+        validation_anchor: VerifiabilityAssessment | None = None,
+        gender: str = "couple",
     ) -> tuple[QualityReport, str | None]:
         """质检 + 修复 prompt。brief_summary 用于对照创意意图审片。"""
-        report = await self.check_image(image_data, brief_summary, mime_type)
+        report = await self.check_image(
+            image_data,
+            brief_summary,
+            original_prompt,
+            mime_type,
+            reference_images,
+            track,
+            validation_anchor,
+            gender,
+        )
 
         if report.inspection_unavailable:
             return report, None

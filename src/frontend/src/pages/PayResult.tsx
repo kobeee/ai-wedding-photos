@@ -41,7 +41,7 @@ export default function PayResult() {
         }
         if (!latestOrder) {
           startTransition(() => {
-            navigate('/checkout')
+            navigate('/plan')
           })
           return
         }
@@ -57,7 +57,7 @@ export default function PayResult() {
       } catch {
         if (!cancelled) {
           startTransition(() => {
-            navigate('/checkout')
+            navigate('/plan')
           })
         }
       }
@@ -263,7 +263,7 @@ export default function PayResult() {
                 重新拉起支付
               </button>
             ) : (
-              <button className="btn btn--outline-light btn--full" onClick={() => navigate('/checkout')}>
+              <button className="btn btn--outline-light btn--full" onClick={() => navigate('/plan')}>
                 返回订单确认
               </button>
             )}

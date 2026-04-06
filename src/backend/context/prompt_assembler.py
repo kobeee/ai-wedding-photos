@@ -31,6 +31,17 @@ _GLOBAL_HARD_AVOIDS = [
     "airbrushed skin", "face slimming or jawline reshaping",
 ]
 
+_FACE_READABILITY_AVOIDS = [
+    "hard side profile",
+    "extreme profile view",
+    "obscured eyes",
+    "both faces turned away from camera",
+    "mirrored profile couple pose",
+    "single-eye-only face",
+    "partner's face blocking the other face",
+    "hair covering the eyes",
+]
+
 # Solo 场景专用硬约束（禁止幻生第二个人）
 _SOLO_HARD_AVOIDS = [
     "second person", "partner", "companion figure",
@@ -101,6 +112,36 @@ def _resolve_variant_for_gender(
         return intent, action, emotion
     # couple — 原样返回
     return variant.intent, variant.action, variant.emotion_focus
+
+
+def _deprofile_couple_action(action: str, variant: "PromptVariant", gender: str) -> str:
+    """对 close/medium couple 动作做去 profile 处理，避免 identity dodge。"""
+    if gender != "couple" or variant.framing not in {"close", "medium", "medium-wide"}:
+        return action
+
+    updated = action
+    updated = _re.sub(
+        r"(?i)foreheads gently touching",
+        (
+            "Standing close with shoulders opened slightly toward camera, faces near each other but not pressed together; "
+            "both partners stay in open three-quarter view with both eyes visible, sharing a soft intimate expression"
+        ),
+        updated,
+    )
+    updated = _re.sub(
+        r"(?i)intense locked eyes",
+        (
+            "Intense connection with both faces kept readable in open three-quarter view, "
+            "both pairs of eyes visible, no hard profile, and limited face overlap"
+        ),
+        updated,
+    )
+    updated = _re.sub(
+        r"(?i)eyes meeting",
+        "eyes connecting with both pupils visible, both faces readable, and no mirrored side profile",
+        updated,
+    )
+    return updated
 
 
 def _solo_story_adapt(story: str, visual_essence: str, gender: str) -> tuple[str, str]:
@@ -185,6 +226,7 @@ The remaining reference images show the real {subject_type}. Their facial identi
 CRITICAL RULES:
 - The scene comes from image 1. The faces come from the remaining images.
 - Do NOT average or blend faces. Each person must look exactly like their reference.
+- If romantic interaction conflicts with clear likeness, choose the version that keeps both faces recognizable and camera-readable.
 - Preserve the exact lighting, color grade, and photographic quality of the scene.
 - This must look like a real high-end editorial wedding photograph, not AI-generated.
 - OUTPUT FORMAT: Generate exactly ONE single photograph.
@@ -225,9 +267,98 @@ def _retoucher_identity(gender: str) -> str:
 
 COUPLE_BODY_PROPORTION_ANCHOR = (
     "The first reference image is a full-body couple photo. When both people are "
-    "visible, preserve the relative height difference and overall build shown there, "
-    "while keeping the final composition natural and photographic."
+    "visible, preserve the exact relative height order, head-size relationship, shoulder "
+    "line, and overall build shown there. Do NOT invert who appears taller. Keep the "
+    "relative body proportions photographic and natural, even if the pose changes."
 )
+
+# ---------------------------------------------------------------------------
+# Validation Track 专用约束（SSS 出片关键：人脸可验证性硬约束）
+# ---------------------------------------------------------------------------
+
+VALIDATION_TRACK_CONSTRAINTS = (
+    "VALIDATION REQUIREMENTS (non-negotiable):\n"
+    "- Frame MUST include both people from at least mid-thigh up (three-quarter body or full body)\n"
+    "- Both faces MUST be in frontal or open three-quarter view — NO profile, NO turned-away angles\n"
+    "- Both pairs of eyes MUST be clearly visible and unobstructed\n"
+    "- Each face should occupy at least 3-5% of total image area (not tiny dots in a landscape)\n"
+    "- Height difference between partners MUST be clearly readable\n"
+    "- Head-to-body ratio MUST be anatomically natural (no bobblehead, no pinhead)\n"
+    "- Shoulders, torso, and limbs must be clearly separated — no ambiguous overlap\n"
+    "- Prefer medium-wide framing (waist-up to full-body) over ultra-wide environmental shots\n"
+    "- Lighting must illuminate faces evenly — no heavy backlighting that silhouettes the face\n"
+    "- This image serves as IDENTITY VERIFICATION — facial clarity takes absolute priority over atmospheric mood"
+)
+
+VALIDATION_TRACK_SOLO_CONSTRAINTS = (
+    "VALIDATION REQUIREMENTS (non-negotiable):\n"
+    "- Frame MUST show the subject from at least mid-thigh up\n"
+    "- Face MUST be in frontal or open three-quarter view with both eyes clearly visible\n"
+    "- Face should occupy at least 5-8% of total image area\n"
+    "- Head-to-body ratio MUST be anatomically natural\n"
+    "- Prefer medium framing (waist-up) over ultra-wide\n"
+    "- Lighting must illuminate the face evenly — no backlighting silhouettes\n"
+    "- This image serves as IDENTITY VERIFICATION — facial clarity takes absolute priority over atmospheric mood"
+)
+
+
+def _readability_control(
+    variant: "PromptVariant",
+    gender: str,
+    *,
+    identity_priority: bool = False,
+) -> str:
+    """补充正脸可读性和眼神关系控制。"""
+    action_lower = f"{variant.intent} {variant.action} {variant.emotion_focus}".lower()
+    rules: list[str] = []
+
+    if variant.framing in {"close", "medium", "medium-wide"}:
+        rules.append(
+            "Face visibility: prefer frontal or open three-quarter facial angles. "
+            "Keep both eyes visible for every subject whenever physically plausible. "
+            "Avoid hard profile views, hidden eyes, or heavy face occlusion."
+        )
+
+    if gender == "couple":
+        if variant.framing in {"close", "medium", "medium-wide"}:
+            rules.append(
+                "Close-couple composition rule: do NOT let both partners collapse into mirrored side profiles. "
+                "Keep both faces readable in open three-quarter view, with neither partner turning beyond a soft "
+                "three-quarter angle. Do not let one partner's face block the other's eyes, nose, or mouth."
+            )
+            if identity_priority:
+                rules.append(
+                    "Identity-priority framing rule: favor a loose close-up or waist-up portrait over face-overlap intimacy. "
+                    "Both full faces must stay camera-readable, with limited overlap and enough facial area visible to verify likeness."
+                )
+        if any(token in action_lower for token in ("direct eye contact", "facing camera", "magazine cover")):
+            rules.append(
+                "Gaze direction: both partners should engage the camera directly, "
+                "with both faces fully readable and emotionally connected."
+            )
+        elif any(token in action_lower for token in ("locked eyes", "eyes meeting", "foreheads gently touching")):
+            rules.append(
+                "Gaze direction: keep intimacy through expression and proximity, but prioritize camera-readable faces over pure mutual profile. "
+                "Do not mix one partner looking to camera while the other looks away. "
+                "If identity references exist, prefer both partners slightly open to camera with visible pupils rather than nose-to-nose profile."
+            )
+        else:
+            rules.append(
+                "Gaze direction: make the relationship explicit through readable eye-lines. "
+                "Use a single coherent gaze scheme for both partners: either mutual gaze or shared camera engagement. "
+                "Avoid split-intent eye-lines that make one partner look posed and the other distracted."
+            )
+        rules.append(
+            "Skin tone protection: keep facial skin tones neutral and believable. "
+            "Environmental color may tint the scene, but must not stain the faces green or cyan."
+        )
+    else:
+        rules.append(
+            "Eyes: keep the subject's eyes readable and emotionally present. "
+            "Avoid hard side profile unless the composition explicitly demands it."
+        )
+
+    return " ".join(rules)
 
 # ---------------------------------------------------------------------------
 # 性别枚举式身份锁定（实验���证："preserve identity" 无效，必须具体枚举）
@@ -337,6 +468,8 @@ def assemble_generation_prompt(
     has_couple_refs: bool = False,
     has_couple_anchor: bool = False,
     gender: str = "couple",
+    identity_priority: bool = False,
+    track: str = "hero",
 ) -> str:
     """组装最终传给 Nano Banana Pro 的生图 prompt。
 
@@ -352,6 +485,13 @@ def assemble_generation_prompt(
     # Solo 硬约束（越早越好，优先级最高）
     if is_solo:
         sections.append(_SOLO_HARD_RULE)
+
+    # Validation Track: 人脸可验证性硬约束（在所有创意内容之前，优先级最高）
+    if track == "validation":
+        if is_solo:
+            sections.append(VALIDATION_TRACK_SOLO_CONSTRAINTS)
+        else:
+            sections.append(VALIDATION_TRACK_CONSTRAINTS)
 
     # Layer 2: Identity Anchor
     sections.append(_identity_anchor(has_refs, slots.pairing, has_couple_refs))
@@ -399,6 +539,7 @@ def assemble_generation_prompt(
 
     # Layer 5: Variant — 用专用 solo 字段（优先）或 sanitize 兜底
     v_intent, v_action, v_emotion = _resolve_variant_for_gender(variant, gender)
+    v_action = _deprofile_couple_action(v_action, variant, gender)
     variant_text = (
         f"This shot: {v_intent}. "
         f"Framing: {variant.framing}. "
@@ -417,8 +558,16 @@ def assemble_generation_prompt(
     if controls:
         sections.append(" ".join(controls))
 
+    readability = _readability_control(
+        variant,
+        gender,
+        identity_priority=identity_priority,
+    )
+    if readability:
+        sections.append(readability)
+
     # Layer 7: Avoid（含全局硬约束 + solo 专用约束）
-    all_avoids = list(brief.avoid_global) + list(variant.avoid_local) + _GLOBAL_HARD_AVOIDS
+    all_avoids = list(brief.avoid_global) + list(variant.avoid_local) + _GLOBAL_HARD_AVOIDS + _FACE_READABILITY_AVOIDS
     if is_solo:
         all_avoids += _SOLO_HARD_AVOIDS
     seen: set[str] = set()
@@ -510,6 +659,7 @@ def assemble_identity_fusion_prompt(
     brief: CreativeBrief,
     variant: PromptVariant,
     gender: str = "couple",
+    identity_priority: bool = True,
 ) -> str:
     """组装 R3 身份融合 prompt。
 
@@ -543,15 +693,23 @@ def assemble_identity_fusion_prompt(
         brief_context += f"\nWardrobe — Him: {brief.wardrobe_groom}"
 
     v_intent, v_action, v_emotion = _resolve_variant_for_gender(variant, gender)
+    v_action = _deprofile_couple_action(v_action, variant, gender)
     variant_context = (
         f"This shot: {v_intent}. Framing: {variant.framing}. "
         f"{v_action}."
     )
     if v_emotion:
         variant_context += f" {v_emotion}."
+    readability = _readability_control(
+        variant,
+        gender,
+        identity_priority=identity_priority,
+    )
+    if readability:
+        variant_context += f"\n{readability}"
 
     identity_locks = _identity_lock_by_gender(gender)
-    all_avoids = list(brief.avoid_global) + list(variant.avoid_local) + _GLOBAL_HARD_AVOIDS
+    all_avoids = list(brief.avoid_global) + list(variant.avoid_local) + _GLOBAL_HARD_AVOIDS + _FACE_READABILITY_AVOIDS
     if is_solo:
         all_avoids += _SOLO_HARD_AVOIDS
     seen: set[str] = set()
@@ -578,3 +736,148 @@ def assemble_identity_fusion_prompt(
         identity_locks=identity_locks + solo_extra,
         avoid_context=avoid_context,
     )
+
+
+def assemble_makeup_finish_prompt(
+    render_prompt: str,
+    *,
+    gender: str = "couple",
+    bride_makeup: str = "",
+    groom_makeup: str = "",
+    has_bride_reference: bool = False,
+    has_groom_reference: bool = False,
+    has_identity_refs: bool = False,
+) -> str:
+    """最终妆造收口，只做妆容/眼神/肌理层面的微调。"""
+    is_solo = gender in ("female", "male")
+    sections: list[str] = [
+        "You are a luxury wedding beauty retoucher making the final finishing pass "
+        "on an already-correct editorial wedding photograph."
+    ]
+
+    if is_solo:
+        sections.append(_SOLO_HARD_RULE)
+
+    sections.append(
+        "The first image is the locked render to preserve. Keep the composition, body proportions, "
+        "relative height order, wardrobe, scene design, lighting, and facial identity unchanged."
+    )
+
+    ref_lines: list[str] = []
+    if has_bride_reference:
+        ref_lines.append("If a bridal makeup preview is provided, transfer only the bride's makeup language from that preview.")
+    if has_groom_reference:
+        ref_lines.append("If a groom grooming preview is provided, transfer only the groom's grooming and skin-finish cues from that preview.")
+    if has_identity_refs:
+        ref_lines.append("Any remaining reference images are identity anchors only. Use them to protect likeness, not to change pose or framing.")
+    if ref_lines:
+        sections.append("Reference usage:\n- " + "\n- ".join(ref_lines))
+
+    if render_prompt:
+        sections.append(f"Original creative intent to preserve:\n{render_prompt}")
+
+    finish_targets: list[str] = []
+    if gender in {"couple", "female"} and bride_makeup:
+        finish_targets.append(f"Bride beauty finish: {bride_makeup}")
+    if gender in {"couple", "male"} and groom_makeup:
+        finish_targets.append(f"Groom beauty finish: {groom_makeup}")
+    finish_targets.extend(
+        [
+            "Keep the eyes crisp, readable, and emotionally intentional",
+            "Preserve frontal or open three-quarter face visibility whenever physically plausible",
+            "For couple close-ups, keep both partners readable with both eyes visible rather than letting either face fall into hard profile",
+            "Keep facial skin tones neutral and believable; do not let environment lighting push the skin into a green or cyan cast",
+            "Refine skin finish, lips, brows, and eye detail without beautifying away the person's real facial structure",
+        ]
+    )
+    sections.append("Apply ONLY these finishing changes:\n- " + "\n- ".join(finish_targets))
+
+    sections.append(
+        "Preserve exactly: facial identity, body proportions, gaze intent, pose, framing, wardrobe, background, "
+        "lighting, and color grade. Do not redesign the faces. Do not rotate faces into a hard side profile."
+    )
+    sections.append(R2_COMPOSITION_LOCK)
+
+    avoids = list(_GLOBAL_HARD_AVOIDS) + list(_FACE_READABILITY_AVOIDS)
+    if is_solo:
+        avoids += _SOLO_HARD_AVOIDS
+    sections.append(
+        "OUTPUT FORMAT: Generate exactly ONE single photograph. "
+        "Avoid: " + ", ".join(avoids) + "."
+    )
+
+    return "\n\n".join(sections)
+
+
+def assemble_face_lock_prompt(
+    render_prompt: str,
+    *,
+    role: str,
+    repair_hints: list[str],
+    gender: str = "couple",
+) -> str:
+    """分人锁脸 pass — SSS 级身份锁定，只允许增强指定人物的人脸可验证性。
+
+    关键改进：
+    - 明确目标人物的面部特征逐项锁定要求
+    - 强调从参考图转移具体面部特征，而非泛泛的"像本人"
+    - 防止模型在锁脸过程中破坏构图和另一方的面部
+    """
+    target = "bride" if role == "bride" else "groom"
+    pronoun = "her" if role == "bride" else "his"
+    sections: list[str] = [_retoucher_identity(gender)]
+
+    sections.append(
+        "The first image is the locked render to preserve. The following reference images show "
+        f"the REAL {target}. Transfer the {target}'s exact facial identity from the references into "
+        "the render while keeping everything else unchanged."
+    )
+
+    # 具体面部特征锁定（比泛泛的"identity"更有效）
+    if role == "bride":
+        face_lock_detail = (
+            f"TARGET: the {target}'s face ONLY.\n"
+            f"Transfer these EXACT features from references:\n"
+            f"- Eye shape, double-eyelid structure, iris color, eyelash density\n"
+            f"- Nose bridge width, tip shape, nostril contour\n"
+            f"- Lip fullness, cupid's bow shape, natural lip color\n"
+            f"- Face shape (oval/round/heart), cheekbone placement, chin profile\n"
+            f"- Skin tone warmth, texture (pores, natural imperfections)\n"
+            f"- Hairline shape and hair framing around the face\n"
+            f"Keep {pronoun} face in the SAME angle as the current render — do NOT rotate it."
+        )
+    else:
+        face_lock_detail = (
+            f"TARGET: the {target}'s face ONLY.\n"
+            f"Transfer these EXACT features from references:\n"
+            f"- Jawline angle, chin shape, jaw definition\n"
+            f"- Eye depth, brow bone structure, brow shape\n"
+            f"- Nose bridge profile, tip shape\n"
+            f"- Lip shape and natural coloring\n"
+            f"- Facial hair pattern and density (if any)\n"
+            f"- Forehead proportion, hairline shape\n"
+            f"- Skin tone, texture (stubble, pores, natural marks)\n"
+            f"Keep {pronoun} face in the SAME angle as the current render — do NOT rotate it."
+        )
+    sections.append(face_lock_detail)
+
+    if render_prompt:
+        sections.append(f"Original creative intent to preserve:\n{render_prompt}")
+
+    fixes = repair_hints or [
+        f"Make the {target}'s face identity-verifiable: a viewer comparing this image with the reference photos should immediately recognize the same person",
+        f"Ensure both of the {target}'s eyes are visible, clear, and match the reference eye shape",
+        f"Match the {target}'s skin tone exactly to references — no whitening, no color cast",
+    ]
+    sections.append("Required fixes:\n- " + "\n- ".join(fixes))
+    sections.append(
+        "STRICT PRESERVATION: composition, framing, lens feel, wardrobe, body proportions, background, "
+        "lighting, color grade, and the emotional relationship between subjects. "
+        "Do NOT change the other person's face at all. Do not introduce a new pose or crop."
+    )
+    sections.append(R2_COMPOSITION_LOCK)
+    sections.append(
+        "OUTPUT FORMAT: Generate exactly ONE single photograph. "
+        "Avoid: " + ", ".join(_GLOBAL_HARD_AVOIDS + _FACE_READABILITY_AVOIDS) + "."
+    )
+    return "\n\n".join(sections)
