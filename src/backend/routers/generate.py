@@ -62,7 +62,7 @@ class GeneratedAsset:
     storage_path: str
     quality_score: float
     delivery_tier: str = "4k"
-    photo_status: str = DeliverableKind.hero_atmosphere.value
+    photo_status: str = DeliverableKind.final_select.value
     user_visible: bool = True
     result_asset: ResultAssetInfo | None = None
 
@@ -269,7 +269,7 @@ async def _run_generation(
 
             await notify(
                 progress=step_base,
-                message=f"正在生成第 {index + 1}/{photos_per_package} 张...",
+                message=f"正在生成第 {index + 1}/{photos_per_package} 张正式成片...",
             )
 
             for attempt in range(3):
@@ -313,7 +313,7 @@ async def _run_generation(
                         raise
                     await notify(
                         progress=max(step_base + 1, min(quality_check_progress - 1, step_base + 3)),
-                        message=f"第 {index + 1}/{photos_per_package} 张遇到波动，正在重试第 {attempt + 2}/3 次...",
+                        message=f"第 {index + 1}/{photos_per_package} 张正式成片遇到波动，正在重试第 {attempt + 2}/3 次...",
                     )
                     await asyncio.sleep(2)
 
@@ -324,7 +324,7 @@ async def _run_generation(
             await notify(
                 status=TaskStatusEnum.quality_check,
                 progress=quality_check_progress,
-                message=f"验证双轨第 {index + 1} 张...",
+                message=f"第 {index + 1}/{photos_per_package} 张正在统一质检...",
             )
 
             for staged_asset in orchestrated_photo.assets:
@@ -362,7 +362,7 @@ async def _run_generation(
             await notify(
                 status=TaskStatusEnum.processing,
                 progress=post_photo_progress,
-                message=f"已完成 {visible_assets}/{photos_per_package} 张主交付片...",
+                message=f"已完成 {visible_assets}/{photos_per_package} 张正式交付片...",
                 quality_score=total_score / max(visible_assets, 1),
                 result_urls=[item.url for item in assets if item.user_visible],
                 result_assets=[
@@ -389,16 +389,15 @@ async def _run_generation(
 
         visible_generated_assets = _visible_generated_assets(assets)
         quality_score = total_score / max(visible_assets, 1)
-        validation_count = len([item for item in assets if item.photo_status == DeliverableKind.validation_safe.value])
-        hero_count = len([item for item in visible_generated_assets if item.photo_status == DeliverableKind.hero_atmosphere.value])
+        final_count = len([item for item in visible_generated_assets if item.photo_status == DeliverableKind.final_select.value])
         if rejected_photos:
             message = (
-                f"生成完成，validation-safe {validation_count} 张，hero {hero_count} 张，拦截 {rejected_photos} 张，"
+                f"生成完成，正式交付 {final_count} 张，拦截 {rejected_photos} 张，"
                 f"综合评分 {quality_score:.2f}"
             )
         else:
             message = (
-                f"生成完成，validation-safe {validation_count} 张，hero {hero_count} 张，"
+                f"生成完成，正式交付 {final_count} 张，"
                 f"综合评分 {quality_score:.2f}"
             )
 

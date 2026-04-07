@@ -86,11 +86,13 @@ class RenderTrack(str, Enum):
     validation = "validation"
     hero = "hero"
     face_lock = "face_lock"
+    final = "final"
 
 
 class DeliverableKind(str, Enum):
     validation_safe = "validation-safe"
     hero_atmosphere = "hero-atmosphere"
+    final_select = "final-select"
 
 
 class PackageCategory(str, Enum):
@@ -212,8 +214,8 @@ class GenerateResponse(BaseModel):
 
 class ResultAssetInfo(BaseModel):
     url: str
-    kind: DeliverableKind = DeliverableKind.hero_atmosphere
-    track: RenderTrack = RenderTrack.hero
+    kind: DeliverableKind = DeliverableKind.final_select
+    track: RenderTrack = RenderTrack.final
     quality_score: float = Field(0.0, ge=0.0, le=1.0)
     user_visible: bool = True
     delivery_tier: DeliveryTier = DeliveryTier.four_k

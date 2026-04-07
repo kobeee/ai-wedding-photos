@@ -68,6 +68,7 @@ class Settings(BaseSettings):
     allow_degraded_delivery_on_vlm_unavailable: bool = True
     photos_per_package: int = 4
     max_fix_rounds: int = 3
+    v14_max_attempts: int = 3
 
     model_config = {
         "env_file": ".env",

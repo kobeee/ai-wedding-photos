@@ -318,7 +318,7 @@ class VLMCheckerService:
                     "- If one face is in profile or partially hidden, set that person's face_area_ratio to 0.0\n"
                     "Be conservative — when in doubt, fail the verification rather than pass it."
                 )
-        else:
+        elif track == RenderTrack.hero:
             user_text += (
                 "\n\nTrack goal: this is a hero-track render. Atmosphere and visual impact matter, "
                 "but identity must still be assessable. If a face is too small (< 2.5% of image area), "
@@ -333,6 +333,13 @@ class VLMCheckerService:
                     f"body_visibility_score={validation_anchor.body_visibility_score:.2f}. "
                     "The hero render must not contradict those proven constraints."
                 )
+        else:
+            user_text += (
+                "\n\nTrack goal: this is the ONLY formal V14 delivery render. "
+                "Judge it as a commercially deliverable wedding photo, not as an experiment. "
+                "Identity, body proportion, wardrobe credibility, and premium atmosphere must all hold together. "
+                "If the image is beautiful but the real people are not verifiable, fail it."
+            )
         user_parts.append({"type": "text", "text": user_text})
 
         payload = {
