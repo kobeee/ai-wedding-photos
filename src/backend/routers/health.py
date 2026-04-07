@@ -28,6 +28,7 @@ async def health_detail():
         "nano_api_configured": bool(settings.nano_banana_api_key),
         "dedicated_nano_api_configured": bool(settings.laozhang_nano_api_key),
         "nano_banana_model": settings.nano_banana_model,
+        "nano_banana_txt2img_model": settings.nano_banana_txt2img_model,
         "gpt_image_model": settings.gpt_image_model,
         "gpt_image_repairs_enabled": settings.enable_gpt_image_repairs,
         "vlm_timeout_seconds": settings.vlm_timeout_seconds,

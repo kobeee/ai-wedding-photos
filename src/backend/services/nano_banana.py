@@ -28,6 +28,10 @@ class NanoBananaService:
             f"{settings.laozhang_base_url}/v1beta/models/"
             f"{settings.nano_banana_model}:generateContent"
         )
+        self.txt2img_api_url = (
+            f"{settings.laozhang_base_url}/v1beta/models/"
+            f"{settings.nano_banana_txt2img_model}:generateContent"
+        )
 
     def _headers(self) -> dict[str, str]:
         return {
@@ -207,6 +211,7 @@ class NanoBananaService:
         aspect_ratio: str,
         size: str,
         timeout: int | None = None,
+        api_url: str | None = None,
     ) -> bytes:
         resolved_size = self._normalize_size(size or settings.nano_image_size)
         resolved_timeout = timeout or settings.nano_timeout_seconds
@@ -221,11 +226,12 @@ class NanoBananaService:
             },
         }
 
+        target_url = api_url or self.api_url
         max_attempts = 3
         async with httpx.AsyncClient(timeout=resolved_timeout) as client:
             for attempt in range(1, max_attempts + 1):
                 resp = await client.post(
-                    self.api_url, headers=self._headers(), json=payload
+                    target_url, headers=self._headers(), json=payload
                 )
                 if resp.status_code >= 400:
                     logger.warning(
@@ -253,12 +259,13 @@ class NanoBananaService:
         aspect_ratio: str = "3:4",
         size: str = settings.nano_image_size,
     ) -> bytes:
-        """文生图 - 仅靠文字 prompt 生成图片，返回图片 bytes。"""
+        """文生图 - 使用 flash 模型快速生成，返回图片 bytes。"""
         self._check_api_key()
         return await self._generate_from_parts(
             [{"text": prompt}],
             aspect_ratio=aspect_ratio,
             size=size,
+            api_url=self.txt2img_api_url,
         )
 
     async def image_to_image(

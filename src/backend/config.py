@@ -11,7 +11,8 @@ class Settings(BaseSettings):
     laozhang_base_url: str = "https://api.laozhang.ai"
 
     # Nano Banana Pro
-    nano_banana_model: str = "gemini-3-pro-image-preview"
+    nano_banana_model: str = "gemini-3-pro-image-preview"  # 图生图/多图参考
+    nano_banana_txt2img_model: str = "gemini-3.1-flash-image-preview"  # 文生图
     nano_timeout_seconds: int = 300
     nano_image_size: str = "1K"
     nano_reference_max_image_dimension: int = 1280
